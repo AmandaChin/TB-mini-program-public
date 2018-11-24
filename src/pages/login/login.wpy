@@ -1,0 +1,154 @@
+<template>
+  <view class="borrow-subscribe">
+    <view class="weui-cells weui-cells_after-title borrow-address">
+      <view class="weui-cell block">
+        <view class="weui-media-box__title h2 color-666">欢迎来到时间银行</view>
+      </view>
+
+      <block>
+        <view class="weui-cell weui-cell_input" style="margin-bottom:30rpx;">
+          <view class="weui-cell__bd h3">
+            <input @input="typing('username')" class="weui-input" value="{{username}}" placeholder="请填写账号" data-wpytyping-a="phone"/>
+          </view>
+        </view>
+        <view class="weui-cell weui-cell_input" style="padding-bottom:50rpx;">
+          <view class="weui-cell__bd h3">
+            <input @input="typing('password')" password class="weui-input" value="{{password}}" placeholder="请填写密码" data-wpytyping-a="phone"/>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="weui-cells__tips" style="margin-top:50rpx;">
+      <view class="color-666">说明</view>
+      <view class="color-999">需登录后实名认证才能进行更多操作！</view>
+    </view>
+    
+    <view style="margin-top:80rpx;">
+      <button @tap="login" class="weui-btn btn-primary" type="primary">登录</button>
+    </view>
+
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import { service } from '../../config.js'
+import base from '../../mixins/base'
+import user from '../../mixins/user'
+
+export default class pageUser extends wepy.page {
+  mixins = [base, user];
+  config = {
+    navigationBarTitleText: '登录',
+    enablePullDownRefresh: false
+  }
+  data = {
+   username:'',
+   password:''
+  }
+
+  computed = {
+  }
+
+  onShow() {
+    
+  }
+
+  onPullDownRefresh() {
+  }
+
+  methods = {
+    typing (type, e) {
+        if (this.isDefined(this[type])) {
+          this[type] = e.detail.value
+        }
+      },
+    async login(){
+      console.log("username:"+this.username)
+      let res = await wepy.request({
+         url: service.host + '/login',
+         data:{
+           username: this.username,
+           password: this.password
+         },
+         method: 'POST'
+      })
+      console.log(res)
+      if(res.statusCode!=200){
+        wepy.showToast({
+          title: '网络错误',
+          icon:'loading',
+          duration: 2000
+        })
+      }
+      else if(res.data.num === -1){
+        wepy.showToast({
+          title: '账户或密码有误',
+          icon:'loading',
+          duration: 2000
+        })
+      }
+      else if(res.data.num === 3){
+        //await this.getWeInfo()
+        this.$parent.globalData.id = res.data.UserID
+        await this.getInfoInDB(res.data.UserID)
+        wx.navigateBack()
+      }
+      else{
+       wepy.showToast({
+          title: '管理员禁登',
+          icon:'loading',
+          duration: 2000
+        })
+      }
+      console.log("login")
+      console.log(res.data.num)
+      this.$apply()
+    }
+  }
+
+  components = {}
+}
+</script>
+
+<style lang="less">
+@import "../../styles/custom/fn.less";
+
+.page-user {
+  @userinfoHeight: 100rpx;
+  @userinfoSpace: 8rpx;
+
+  .userinfo {
+    padding: 20rpx 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .userinfo-avatar {
+    margin-bottom: 24rpx;
+    width: @userinfoHeight;
+    height: @userinfoHeight;
+    border-radius: 50%;
+  }
+
+  // space + space
+  .userinfo-info {
+    line-height: 1;
+    padding: @userinfoSpace 0;
+    margin-left: 3 * @userinfoSpace;
+  }
+
+  // text + space + text
+  .userinfo-nickname {
+    color: @uiColorGreen;
+    font-size: (@userinfoHeight - 4 * @userinfoSpace) * (16 / 30);
+    margin-bottom: 2 * @userinfoSpace;
+  }
+  .userinfo-status {
+    color: #999;
+    font-size: (@userinfoHeight - 4 * @userinfoSpace) * (14 / 30);
+  }
+}
+</style>

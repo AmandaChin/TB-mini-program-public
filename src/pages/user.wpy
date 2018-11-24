@@ -1,0 +1,283 @@
+<template>
+  <view class="page-user">
+    <view wx:if="{{isWeLogin}}">
+    <view wx:if="{{isLogin}}">
+    <view class="weui-panel">
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell">
+          <view class="weui-cell__bd userinfo clearfix">
+            <navigator url="/pages/user/userinfo/info">
+              <image class="userinfo-avatar" src="{{ avatarUrl }}" background-size="cover"/>
+            </navigator>
+            <view class="userinfo-nickname">{{ nickName }}</view>
+            <!-- <view class="userinfo-status">志愿时长：0 hours</view>
+            <view class="userinfo-status">服务次数：0 times</view> -->
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="weui-panel">
+      <view class="weui-cells weui-cells_after-title">
+        <navigator url="/pages/user/medal/myMedal" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+          <view class="weui-cell__bd">我的勋章</view>
+          <view class="weui-cell__ft weui-cell__ft_in-access">
+            <text>余额：</text>
+            <text class="color-green">{{myAccount}}</text>
+            <text>VLT</text>
+          </view>
+        </navigator>
+        <navigator url="/pages/user/demand/myDemand" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+          <view class="weui-cell__bd">我的需求</view>
+          <view class="weui-cell__ft weui-cell__ft_in-access">
+          </view>
+        </navigator>
+        <navigator url="/pages/user/volunteer/myVolunteer" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+          <view class="weui-cell__bd">我的服务</view>
+          <view class="weui-cell__ft weui-cell__ft_in-access">
+          </view>
+        </navigator>
+        <navigator url="/pages/user/course/myCourse" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+          <view class="weui-cell__bd">我的课程</view>
+          <view class="weui-cell__ft weui-cell__ft_in-access">
+          </view>
+        </navigator>
+        <navigator url="/pages/user/check/mycheck" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+          <view class="weui-cell__bd">
+            <view style="display: inline-block; vertical-align: middle">我的审核</view>
+          </view>
+          <view class="weui-cell__ft weui-cell__ft_in-access">
+            <!-- <text class="color-green">1</text> -->
+          </view>
+        </navigator>
+        <navigator url="/pages/user/notice/notice" class="weui-cell weui-cell_access" hover-class="weui-cell_active">
+          <view class="weui-cell__bd">
+            <view style="display: inline-block; vertical-align: middle">我的通知</view>
+            <!-- <view class="weui-badge" style="margin-left: 5px;">New</view>  -->
+          </view>
+          <view class="weui-cell__ft weui-cell__ft_in-access">
+            <!-- <text class="color-green">1</text> -->
+          </view>
+        </navigator>
+      </view>
+    </view>
+    </view>
+     <view wx:else class="text-center tip-page page-borrow-tip">
+    <block>
+      <icon class="tip-icon" type="cancel" size="70" color="#bbb"></icon>
+      <view class="h4">您还没有登录，快去登录/注册吧~</view>
+      <view style="margin-bottom:0;" >
+      <button @tap="login" class="weui-btn" type="primary" size="mini">立即登录</button>
+      </view>
+      <button style="margin-top:30px;" @tap="register" class="weui-btn" type="primary" size="mini">立即注册</button>
+    </block>
+  </view>
+  </view>
+  <view wx:else>
+    <block>
+      <view class="userinfo clearfix" style="margin-top:40%;">     
+        <!-- 如果只是展示用户头像昵称，可以使用 <open-data /> 组件 -->
+        <open-data type="userAvatarUrl"  background-size="cover" class="userinfo-avatar"></open-data>
+        <open-data type="userNickName" class="userinfo-nickname"></open-data>
+        <view class="h4">时间银行想获取您的个人信息~</view>
+        <!-- 需要使用 button 来授权登录 -->
+        <button type="default" style="margin-top:25rpx" wx:if="{{canIUse}}" open-type="getUserInfo" size="mini" @getuserinfo="bindGetUserInfo">授权登录</button>
+        <view wx:else>请升级微信版本</view>
+      </view>
+    
+    </block>
+  </view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import { service } from '../config.js'
+import base from '../mixins/base'
+import user from '../mixins/user'
+
+export default class pageUser extends wepy.page {
+  mixins = [base, user];
+  config = {
+    navigationBarTitleText: '我的',
+    enablePullDownRefresh: false
+  };
+  data = {
+      nickName: '',
+      // 头像占位图
+      avatarUrl: '../images/icon/icon-avatar@2x.png',
+      accountNum:0,
+      canIUse: wx.canIUse('button.open-type.getUserInfo')
+  };
+
+  computed = {
+    isWeLogin(){
+      console.log('weLogin')
+      console.log(this.$parent.globalData.user )
+      if(this.$parent.globalData.user !== null){
+        return true;
+      }else{
+        return false;
+      }
+    },
+    isLogin() {
+        if(this.$parent.globalData.id !== -1){
+          return true;
+        }else{
+          return false;
+        }
+        //return true;
+    },
+    nickName() {
+      const info = this.$parent.globalData.userinfo
+      if(info){
+        // 名称或头像不为空的，才认为是授权用户
+        return info.name
+      }
+      else{
+        return '未授权用户'
+      }
+    },
+    avatarUrl() {
+      const info = this.$parent.globalData.user
+      if(info){
+        
+        return info.avatarUrl
+      }
+      else{
+        return '../images/icon/icon-avatar@2x.png'
+      }
+    },
+    myAccount() {
+     const num = this.accountNum
+      if(num){
+        return parseFloat(num).toFixed(2)
+      }
+      else{
+        return 0
+      }
+    }
+  };
+
+  onLoad(){
+    wepy.getSetting({ success: res => {
+      if (res.authSetting['scope.userInfo']){
+        wepy.getUserInfo({
+          success: res => {
+            console.log(res.userInfo)
+          },
+          fail: () => {},
+          complete: () => {}
+        });
+        
+      }
+    } });
+    
+  }
+  onShow() {
+    if(this.$parent.globalData.id !== -1){
+      this.initUserData()
+    }
+     
+  }
+
+  onPullDownRefresh() {
+    if(this.$parent.globalData.id !== -1){
+      this.initUserData()
+    }
+  }
+  
+  // 初始化页面数据
+  initUserData() {
+    //this.getWeInfo()
+    this.getUserAccount()
+    this.$apply()
+  }
+  async getUserAccount(){
+    console.log('get account!')
+    let res = await wepy.request({
+      url: service.host + '/wallet/'+this.$parent.globalData.id, //开发者服务器接口地址",
+      method: 'GET'
+    });
+    this.accountNum = res.data.coins
+    this.$apply()
+  }
+
+  methods = {
+    async bindGetUserInfo(e){
+      console.log(e.detail.userInfo)
+      this.$parent.globalData.user = e.detail.userInfo
+      // let res = await wepy.getSetting()
+      // if (res.authSetting['scope.userInfo']){
+      //   let info =wepy.getUserInfo()
+      //   console.log(info.userInfo)
+      //   this.$parent.globalData.user = info.userInfo
+      // }
+    },
+    login(){
+      wx.navigateTo({
+          url: `/pages/login/login`
+        })
+    },
+    register(){
+      wx.navigateTo({
+          url: `/pages/login/register`
+        })
+    }
+  }
+
+  components = {}
+}
+</script>
+
+<style lang="less">
+@import "../styles/custom/fn.less";
+
+.page-user {
+  @userinfoHeight: 100rpx;
+  @userinfoSpace: 8rpx;
+
+.userinfo {
+    padding: 20rpx 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.userinfo-avatar {
+    margin-bottom: 24rpx;
+    width: @userinfoHeight;
+    height: @userinfoHeight;
+    border-radius: 50%;
+}
+
+  // space + space
+.userinfo-info {
+    line-height: 1;
+    padding: @userinfoSpace 0;
+    margin-left: 3 * @userinfoSpace;
+}
+
+  // text + space + text
+.userinfo-nickname {
+    color: @uiColorGreen;
+    font-size: (@userinfoHeight - 4 * @userinfoSpace) * (16 / 30);
+    margin-bottom: 2 * @userinfoSpace;
+}
+.userinfo-status {
+    color: #999;
+    font-size: (@userinfoHeight - 4 * @userinfoSpace) * (14 / 30);
+}
+.weui-badge {
+  display: inline-block;
+  padding: .15em .4em;
+  min-width: 8px;
+  border-radius: 18px;
+  background-color: #E64340;
+  color: #FFFFFF;
+  line-height: 1.2;
+  text-align: center;
+  font-size: 12px;
+  vertical-align: middle;
+}
+}
+</style>

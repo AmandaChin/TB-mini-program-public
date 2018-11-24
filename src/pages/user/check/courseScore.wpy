@@ -1,0 +1,144 @@
+<template>
+  <view>
+    <view class="weui-panel">
+      <view class="page__bd">
+          <view class="weui-cells__title" style="font-size: larger;text-align: center;color: #10aefe;">审核意见</view>
+            <view class="padding-10">
+              <rate1 title="服务内容与描述相符" :value.sync="value1" />
+            </view>
+            <view class="padding-10">
+              <rate2 title="服务时间与描述相符" :value.sync="value2" />
+            </view>
+            <view class="padding-10">
+              <rate3 title="服务态度评价" :value.sync="value3" />
+            </view>
+            <view class="padding-10">
+              <rate4  title="服务能力评价" :value.sync="value4" />
+            </view>
+            <view class="weui-cell">
+            <view class="weui-cell__bd">
+                <view class="weui-label reset-label-left h3">勋章数量</view>
+                <view class="weui-cell__ft h3">
+                    <view style=" word-break: break-all">{{(value1+value2+value3+value4)*0.025 }}</view>
+                </view>
+            </view>
+            </view>
+        <view>
+          <button @tap="saveInfo" class="weui-btn btn-primary" type="primary">提 交</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import { service } from '../../../config.js'
+  import Rate from '../../../components/rate/index'
+  export default class CheckPage extends wepy.page {
+    config = {
+      navigationBarTitleText: '审核界面',
+      enablePullDownRefresh: true
+    }
+    components = {
+      rate1: Rate,
+      rate2: Rate,
+      rate3: Rate,
+      rate4: Rate
+    }
+    data = {
+      serviceID:'',
+      value1: 0,
+      value2: 0,
+      value3: 0,
+      value4: 0
+    }
+    computed = {
+    }
+    methods = {
+      async saveInfo(){
+        wx.showToast({
+          title: '稍等，请勿重复按',
+          icon:'loading',
+          duration: 50000
+        })
+        let res = await wepy.request({
+            url: service.host + '/score',
+            data:{
+              'UserID': parseInt(this.$parent.globalData.id),
+              'ServiceID': parseInt(this.serviceID),
+              'score1': parseInt(this.value1),
+              'score2': parseInt(this.value2),
+              'score3': parseInt(this.value3),
+              'score4': parseInt(this.value4),
+            },
+            method: 'POST'
+        })
+        console.log(res)
+        if(res.data.code==1){
+            wx.showToast({
+            title:'提交成功!',
+            icon:'success',
+            duration:800
+          });
+          setTimeout(() => {
+            wepy.navigateTo({ url: '/pages/user/check/mycheck' });
+          }, 800);
+        }else{
+          wx.showToast({
+          title: '请重新提交',
+          icon: 'loading',
+          duration: 2000
+        });
+        }
+        setTimeout(() => {
+            wepy.navigateTo({ url: '/pages/user/check/mycheck' });
+        }, 150000);
+        this.$apply()
+      }
+    }
+
+    async onLoad(query) {
+     this.serviceID = query.id
+     console.log(this.serviceID)
+    }
+
+
+
+
+  }
+</script>
+
+
+
+
+<style lang="less">
+  @import "../../../styles/custom/fn.less";
+  @userinfoHeight: 150rpx;
+  @userinfoSpace: 8rpx;
+
+  .userinfo {
+    padding: 20rpx 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .weui-select {
+    position: relative;
+  }
+  .userinfo-avatar {
+    margin-bottom: 24rpx;
+    width: @userinfoHeight;
+    height: @userinfoHeight;
+    border-radius: 50%;
+    align-items: center;
+  }
+  .page-info .weui-cell__ft
+  {
+    text-align:right;
+    color: #000000;
+  }
+  .booklist-abstract {
+    color: #999;
+    .text-ellipsis-line(2);
+  }
+</style>

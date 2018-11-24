@@ -1,0 +1,163 @@
+<template>
+  <view class="page-index">
+    <SearchBar :placeholder="searchText" ></SearchBar>
+    <!-- <navigator url="/pages/main/searchCourse" redirect="false" hover-class="navigator-hover" open-type="navigate|redirect|switchTab">
+    <view class="weui-search-bar">
+      <view class="weui-search-bar__form">
+        <view class="weui-search-bar__box">
+          <icon class="weui-icon-search_in-box" type="search" size="14"></icon>
+          <view class="weui-search-bar__text">搜索感兴趣的课程信息</view>
+        </view>
+        <label class="weui-search-bar__label" hidden="{{inputShowed}}">
+          <icon class="weui-icon-search" type="search" size="14"></icon>
+          <view class="weui-search-bar__text">搜索感兴趣的课程信息</view>
+        </label>
+      </view>
+    </view>
+    </navigator> -->
+    <CourseList1 :list.sync="list0" title="线上课程"
+     :loading.sync="loading1" :noMore.sync="noMoreList1"
+     :page.sync="pagetype1" :OrderType.sync="OrderType" ></CourseList1>
+     <CourseList2 :list.sync="list1" title="线下课程"
+     :loading.sync="loading2" :noMore.sync="noMoreList2"
+     :page.sync="pagetype2" :OrderLocation.sync="OrderLocation" ></CourseList2>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import { service } from '../config.js'
+import base from '../mixins/base'
+import user from '../mixins/user'
+import publicProcess from '../mixins/publicProcess'
+import SearchBar from '../components/searchbar'
+import CourseList from '../components/courseList'
+
+export default class pageIndex extends wepy.page {
+  mixins = [base, user, publicProcess]
+  config = {
+    navigationBarTitleText: '课程',
+    navigationBarTextStyle: 'white',
+    navigationBarBackgroundColor: '#049BFF'
+  }
+  data = {
+    searchText:'搜索感兴趣的课程信息',
+    OrderType:true,
+    OrderLocation:true,
+    inputShowed: false,
+    noMoreList1: false,
+    loading1: false,
+    noMoreList2: false,
+    loading2: false,
+    pagetype1:'onlineCourses',
+    pagetype2:'offlineCourses',
+    list0: [],
+    list1: [],
+    page: 0,
+    size: 5
+  }
+
+  onReady() {
+    this.initPageData()
+  }
+  onShow() {
+    this.initPageData()
+  }
+
+  onPullDownRefresh() {
+    this.initPageData()
+  }
+
+  onReachBottom() {
+    setTimeout(() => {
+      this.updateOnline()
+      this.updateOffline()
+    }, 200);
+  }
+   
+  // 初始化页面数据
+  async initPageData() {
+    var id = this.$parent.globalData.id
+    // 请求列表
+    this.updateOnline()
+    this.updateOffline()
+    this.$apply()
+  }
+
+  // 更新图书列表
+  async updateOnline() {
+    let res = await wepy.request({
+         url: service.host + '/online-courses',
+         method: 'GET'
+    })
+    const data = res.data
+    console.log(data)
+    // 请求到空列表后就认为没有更多了
+    if (data.length !== 0) {
+      this.noMoreList1 = true
+    }
+    this.list0 = this.getItems(data,data.length)
+    this.$apply()
+
+  }
+  async updateOffline() {
+    let res = await wepy.request({
+         url: service.host + '/offline-courses',
+         method: 'GET'
+    })
+    const data = res.data
+    console.log(data)
+    // 请求到空列表后就认为没有更多了
+    if (data.length !== 0) {
+      this.noMoreList2 = true
+    }
+    this.list1 = this.getItems(data,data.length)
+    this.$apply()
+
+  }
+  // 处理图书列表
+  getItems(data,len) {
+    return this.getArray(data).map((item, index) => {
+      var time
+      if(item.date){
+        time = this.formatDateTime(item.date)
+      }else if(item.time){
+        time = this.formatDateTime(item.time)
+      }
+      // 拼接示例数据
+      return {
+        id: item.id,
+        title: item.title,
+        teacher: item.teacher,
+        author: item.author,
+        price: item.price,
+        time: time,
+        content: this.convertHtmlToText(item.content),
+        abstract: this.convertHtmlToText(item.abstract),
+        place: item.place,
+        currentnum:item.currentnum,
+        limit:item.limit,
+        type:item.type
+      }
+    })
+    this.$apply()
+  }
+
+   
+
+  methods = {}
+
+  components = {
+    SearchBar,
+    CourseList1 : CourseList,
+    CourseList2 : CourseList
+  }
+}
+</script>
+
+<style lang="less">
+@import "../styles/custom/fn.less";
+.page-index {
+  // some style
+}
+</style>

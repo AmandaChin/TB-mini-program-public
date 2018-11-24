@@ -1,0 +1,114 @@
+<template>
+  <view class="page-demand"> 
+    <view class="weui-panel">
+      <!-- <view class="weui-media-box ">
+        <view class="h2 color-666">发布需求/服务信息</view>
+      </view> -->
+    </view>
+    <block>
+    <view class="weui-panel" style="text-align: center; padding:20rpx;">
+      <navigator url="/pages/demand/oldmanDemand"  >
+        <image src="{{oldman_icon}}" class="userinfo-avatar"/>
+      </navigator>
+      <button @tap="oldman" class="weui-btn btn-primary" style="width:70%; display: inline-block;" type="primary">我需要志愿服务</button>
+    </view>
+    </block>
+    <block>
+    <view class="weui-panel" style="text-align: center;">
+      <navigator url="/pages/demand/volunteerDemand" >
+        <image src="{{volunteer_icon}}" class="userinfo-avatar" />
+        <button @tap="volunteer" class="weui-btn btn-primary" style="width:70%; display: inline-block;" type="primary">我可以提供志愿服务</button>
+      </navigator>
+    </view>
+    </block>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { service } from '../config.js'
+  import base from '../mixins/base'
+  import user from '../mixins/user'
+
+  export default class publicDemand extends wepy.page {
+    mixins = [base, user]
+    config = {
+      navigationBarTitleText: '需求发布',
+      enablePullDownRefresh: false
+    }
+    components = {}
+    data = {
+      oldman_icon: '../images/oldman.jpg',
+      volunteer_icon: '../images/volunteer.png',
+      loaded: false,
+      loading: false,
+      timeIndex: 0
+    }
+    computed = {
+  
+    }
+    methods = {
+      oldman() {
+        wepy.navigateTo({ url: '/pages/demand/oldmanDemand' })
+      },
+      volunteer() {
+        wepy.navigateTo({url: '/pages/demand/volunteerDemand'})
+      }
+    }
+
+    onShow() {
+    }
+
+    onPullDownRefresh() {
+    }
+    
+}
+</script>
+
+<style lang="less">
+  @import "../styles/custom/fn.less";
+
+  @icon-font-size: 34rpx;
+
+  .page-demand{
+    background-color: #FFFFFF;
+    .userinfo-avatar {
+      display: inline-block;
+      width: 300rpx;
+      height: 300rpx;
+      border-radius: 50%;
+  }
+  .weui-media-box{
+    padding-bottom: 1em;
+    display: flex;
+  }
+  .weui-panel {
+    background-color: #FFFFFF;
+    margin-top: 82rpx;
+    &:first-child {
+        margin-top: 0;
+    }
+
+    position: relative;
+    overflow: hidden;
+    &:before {
+        .setTopLine(#FFFFFF);
+    }
+    &:after {
+        .setBottomLine(#FFFFFF);
+    }
+}
+
+.weui-panel__hd {
+    padding: 14px 15px 10px;
+    color: #FFFFFF;
+    font-size: 13px;
+    position: relative;
+    &:after {
+        .setBottomLine(#FFFFFF);
+        left: 15px;
+    }
+}
+  }
+
+</style>

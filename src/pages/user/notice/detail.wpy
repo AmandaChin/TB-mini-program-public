@@ -1,0 +1,139 @@
+<template>
+  <view class="notice-detail">
+      <view class="weui-panel">
+        <view class="page__hd">
+          <view class="page__title" style="text-align:center;">{{notice.title}}</view>
+        </view>
+      <view class="page__bd">
+        <view class="weui-cells__title">详情：</view>
+        <view class="weui-cells weui-cells_after-title">
+          <view class="weui-cell">
+              <view class="weui-cell__bd">标题:</view>
+              <view class="weui-cell__ft">{{notice.title}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">发布人：</view>
+              <view class="weui-cell__ft">{{notice.author}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">发布日期：</view>
+              <view class="weui-cell__ft">{{notice.createdAt}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd ">内容：</view>
+              <view class="weui-cell__ft">{{notice.content}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <Screen class="fixed-bottom">
+      <button @tap="toReturn()" class="btn-block btn-flex-full" type="primary">
+        <text>我 已 阅 读</text>
+      </button>
+    </Screen>
+  </view>
+  
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { service } from '../../../config.js'
+  import base from '../../../mixins/base'
+  import user from '../../../mixins/user'
+  import Screen from '../../../components/screen'
+
+  export default class mainDetail extends wepy.page {
+    mixins = [base,user]
+    config = {
+      navigationBarTitleText: '通知详情'
+    }
+    data = {
+      tags: [],
+      navigate: false,
+      notice: ''
+    }
+
+    async onLoad(query) {
+      setTimeout(() => {
+        this.notice = query
+        this.$apply()
+      }, 300)
+    }
+
+    onShow() {
+      //后退触发onShow
+    }
+    onUnload(){
+
+    }
+    onPullDownRefresh() {
+      this.initPageData()
+      //this.initUserData()
+    }
+
+    computed = {
+      
+    }
+     // 初始化页面数据
+    initUserData() {
+      
+      this.$apply()
+    }
+
+    // 初始化页面数据
+    initPageData() {
+      wx.stopPullDownRefresh()
+     
+    }
+    methods = {
+      async toReturn() {
+        let res = await wepy.request({
+          url: service.host + '/notice/'+this.notice.id+'/'+this.$parent.globalData.id, 
+          method: 'POST'
+        });
+        console.log(res)
+        wx.navigateBack()
+        this.$apply()
+      }
+    }
+
+    components = {
+      Screen
+    }
+  }
+</script>
+
+<style lang="less">
+@import "../../../styles/custom/fn.less";
+
+.main-detail{
+  .weui-cell__ft{
+    color: black;
+  }
+  .weui-cell{
+    margin:10rpx;
+  }
+  .detail-tags{
+    .h4();
+    padding: 0.4em 0;
+  }
+
+  
+  .btn-flex-1{
+    padding: 0;
+    width: 3.5em;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+  .btn-flex-full{
+    flex: 1 1 auto;
+  }
+  .btn-text-bottom{
+    .h5();
+    line-height: 1;
+    color: #777;
+  }
+
+}
+</style>

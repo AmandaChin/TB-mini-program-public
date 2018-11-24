@@ -1,0 +1,109 @@
+<template>
+ <view>
+     <booklist :list.sync="list" title="历史服务"
+     :loading.sync="loading" :noMore.sync="noMoreList" :OrderType.sync="OrderType"  :OrderStatus.sync="OrderStatus" :page.sync="pagetype"></booklist>
+ </view>
+</template>
+
+
+<script>
+import booklist from '../../../components/bookList'
+import wepy from 'wepy'
+import { service } from '../../../config.js'
+import base from '../../../mixins/base'
+import user from '../../../mixins/user'
+import publicProcess from '../../../mixins/publicProcess'
+export default class myVolunteer extends wepy.page {
+  mixins = [base, user, publicProcess]
+  config = {
+    navigationBarTitleText: '我的服务',
+    enablePullDownRefresh: false
+  }
+
+ async onLoad () {
+    this.initPageData()
+  }
+
+  onReachBottom() {
+    setTimeout(() => {
+      this.updateDemandList()
+      this.$apply()
+    }, 200)
+  }
+
+  // 初始化页面数据
+  initPageData() {
+    // 初始化参数
+    this.page = 0
+    // 请求列表
+    this.updateDemandList()
+  }
+
+  async updateDemandList() {
+    //if (this.loading || this.noMoreList) return
+    let res = await wepy.request({
+      url: service.host + '/demands/'+ this.$parent.globalData.id,
+      data:{
+        'type': 1
+      },
+      method: 'GET'
+    })
+    console.log(res)
+    const list = res.data
+    this.list = this.getItems(list)
+    this.$apply()
+
+  }
+
+  // 处理列表
+  getItems(data) {
+    //const len = this.list.length
+    return this.getArray(data).map((item, index) => {
+      var isOnDate = 'false';
+      if(new Date(item.endTime).getTime()<new Date().getTime()){
+        isOnDate = 'true'
+      }
+      console.log("isOnDate:"+isOnDate)
+      // 拼接示例数据
+      return {
+        id: item.id,
+        title: item.serviceContent,
+        name: item.name,
+        date: item.startTime.substring(0,10),
+        time: item.startTime.substring(11,19),
+        content: this.convertHtmlToText(item.remark),
+        status1: item.status1,
+        status2: item.status2,
+        duration: item.duration,
+        phone:item.phone,
+        //判断是发布/响应
+        mutualtype:item.type,
+        type: '1',
+        //判断是否过期
+        isOnDate:isOnDate
+      }
+    })
+    this.$apply()
+  }
+
+  
+
+  components = {
+    booklist
+  }
+  data = {
+    list: [],
+    noMoreList: false,
+    loading: false,
+    OrderType: true,
+    OrderStatus:false,
+    pagetype: 'historyService'
+  }
+  computed = {}
+}</script>
+
+<style lang="less">
+.page-index {
+  
+}
+</style>

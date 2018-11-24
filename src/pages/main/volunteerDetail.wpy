@@ -1,0 +1,226 @@
+<template>
+  <view class="main-detail">
+    <view wx:if="{{isLogin}}">
+      <view wx:if="{{isOwn}}" class="text-center tip-page page-borrow-tip">
+         <block>
+          <icon class="tip-icon" type="cancel" size="70" color="#bbb"></icon>
+          <view class="h4">自己不可以响应自己的服务哦~</view>
+        </block>
+      </view>
+      <view wx:else>
+      <view class="weui-panel">
+        <view class="page__hd">
+            <view class="page__title" style="text-align:center;">{{demand.title}}</view>
+        </view>
+      <!-- <view class="weui-media-box weui-media-box_text weui-cells_in-small-appmsg">
+        <view class="h2 color-333">{{demand.title}}</view>
+        <view class="detail-tags">
+          <text wx:for="{{tags}}" wx:key="index" wx:for-item="tag" class="tag">{{tag}}</text>
+        </view>
+      </view> -->
+    
+      <view class="page__bd">
+        <view class="weui-cells__title">详情：</view>
+        <view class="weui-cells weui-cells_after-title">
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务日期：</view>
+              <view class="weui-cell__ft">{{demand.date}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务时间：</view>
+              <view class="weui-cell__ft">{{demand.mytime}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务对象：</view>
+              <view class="weui-cell__ft">{{demand.name}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务内容：</view>
+              <view class="weui-cell__ft">{{demand.title}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">具体事宜：</view>
+              <view class="weui-cell__ft">{{demand.content}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务时长：</view>
+              <view class="weui-cell__ft">{{demand.duration}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">联系方式：</view>
+              <view class="weui-cell__ft">{{demand.phone}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <Screen class="fixed-bottom">
+      <view style="display: flex;">
+        <button @tap="toApply()" disabled="{{!isEnabled}}" class="weui-btn btn-block btn-flex-full" type="primary">
+          <text wx:if="{{!isEnabled}}">已被申请</text>
+          <text wx:else>申请</text>
+        </button>
+      </view>
+      <!-- <button slot="placeholder" class="weui-btn btn-block" type="primary">申请</button> -->
+    </Screen>
+    </view>
+  </view>
+  <view wx:else class="text-center tip-page page-borrow-tip">
+    <block>
+      <icon class="tip-icon" type="cancel" size="70" color="#bbb"></icon>
+      <view class="h4">您还没有登录，快去登录/注册吧~</view>
+      <view style="margin-bottom:0;" >
+      <button @tap="login" class="weui-btn" type="primary" size="mini">立即登录</button>
+      </view>
+      <button style="margin-top:30px;" @tap="register" class="weui-btn" type="primary" size="mini">立即注册</button>
+    </block>
+  </view>
+  </view>
+  
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { service } from '../../config.js'
+  import base from '../../mixins/base'
+  import user from '../../mixins/user'
+  import Swiper from '../../components/swiper'
+  import Screen from '../../components/screen'
+
+  export default class mainDetail extends wepy.page {
+    mixins = [base, user]
+    config = {
+      navigationBarTitleText: '服务详情'
+    }
+    data = {
+      tags: [],
+      navigate: false,
+      demand: {
+        
+      }
+    }
+
+    async onLoad(query) {
+      this.demand = query
+    }
+
+    onShow() {
+      //后退触发onShow
+    }
+    onUnload(){
+
+    }
+    onPullDownRefresh() {
+      this.initPageData()
+    }
+
+    computed = {
+      isEnabled() {
+        return Boolean(this.demand && +this.demand.status1 == 0)
+      },
+      isLogin() {
+        if(this.$parent.globalData.id !== -1){
+         return true;
+        }else{
+          return false;
+        }
+      },
+      isOwn() {
+        if(this.$parent.globalData.id == this.demand.authorID){
+         return true;
+        }else{
+          return false;
+        }
+      }
+    }
+     
+
+    // 初始化页面数据
+    initPageData() {
+      wx.stopPullDownRefresh()
+     
+    }
+    methods = {
+      login(){
+        wx.navigateTo({
+            url: `/pages/login/login`
+         })
+      },
+      register(){
+        wx.navigateTo({
+            url: `/pages/login/register`
+         })
+      },
+      async toApply() {
+        console.log("apply")
+        console.log(this.demand)
+         let res = await wepy.request({
+           url: service.host + '/applicate', //开发者服务器接口地址",
+           data: {
+             'volunteer' : this.demand.authorID,
+             'beneficiary': this.$parent.globalData.id,
+             'ServiceID' : this.demand.id
+           },
+           method: 'POST'
+         });
+         console.log(res)
+         if(res.data.num=='1'){
+            wx.showToast({
+              title: '申请成功',
+              icon: 'success',
+              duration: 800
+            });
+            setTimeout(() => {
+              this.$switch({url:'/pages/index'});
+            }, 800);
+          }else{
+            wx.showToast({
+              title: '申请失败',
+              icon: 'loading',
+              duration: 800
+            });
+          }
+         this.$apply()
+      }
+    }
+
+    components = {
+      Swiper,
+      Screen
+    }
+  }
+</script>
+
+<style lang="less">
+@import "../../styles/custom/fn.less";
+
+.main-detail{
+  .weui-cell__ft{
+    color: black;
+  }
+  .weui-cell{
+    margin:10rpx;
+  }
+  .detail-tags{
+    .h4();
+    padding: 0.4em 0;
+  }
+
+  
+  .btn-flex-1{
+    padding: 0;
+    width: 3.5em;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+  .btn-flex-full{
+    flex: 1 1 auto;
+  }
+  .btn-text-bottom{
+    .h5();
+    line-height: 1;
+    color: #777;
+  }
+
+}
+</style>

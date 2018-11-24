@@ -1,0 +1,266 @@
+<template>
+  <view class="main-detail">
+    <view class="weui-panel">
+      <view class="page__hd">
+            <view class="page__title" style="text-align:center;">{{demandlist.serviceContent}}</view>
+        </view>
+    
+      <view class="page__bd">
+        <view class="weui-cells__title">详情：</view>
+        <view class="weui-cells weui-cells_after-title">
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务日期：</view>
+              <view class="weui-cell__ft">{{date}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务时间：</view>
+              <view class="weui-cell__ft">{{time}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务对象：</view>
+              <view class="weui-cell__ft">{{demandlist.name}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务内容：</view>
+              <view class="weui-cell__ft">{{demandlist.serviceContent}}</view>
+          </view>
+          <view wx:if="{{demand.mutualtype == '0'}}">
+            <view class="weui-cell">
+              <view class="weui-cell__bd">具体事宜：</view>
+              <view class="weui-cell__ft" >{{remark}}</view>
+            </view>
+          </view>
+          <view wx:else>
+            <view class="weui-cell">
+              <view class="weui-cell__bd">志愿服务详情：</view>
+              <view class="weui-cell__ft" >{{remark}}</view>
+            </view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">服务时长：</view>
+              <view class="weui-cell__ft">{{demandlist.duration}}</view>
+          </view>
+          <view class="weui-cell">
+              <view class="weui-cell__bd">联系方式：</view>
+              <view class="weui-cell__ft">{{demandlist.phone}}</view>
+          </view>
+        </view>
+          
+      </view>
+    </view>
+
+     <Screen class="fixed-bottom">
+      <view style="display: flex;">
+        <button @tap="toDelete" disabled="{{demand.status1!=0}}" class="btn-block  btn-flex-full">
+          <block wx:if="{{demand.status1==0}}">
+            <image class="imgicon" src="{{icon_delete_active}}" mode="aspectFit"/>
+          </block>
+          <block wx:else>
+            <image class="imgicon" src="{{icon_delete}}" mode="aspectFit"/>
+          </block>
+          <view class="btn-text-bottom">删除</view>
+        </button>
+        <button @tap="toEdit" disabled="{{demand.status1!=0||demand.isOnDate=='true'}}" class="btn-block  btn-flex-full">
+          <block wx:if="{{demand.status1==0 && demand.isOnDate=='false'}}">
+            <image class="imgicon" src="{{icon_edit_active}}" mode="aspectFit"/>
+          </block>
+          <block wx:else>
+            <image class="imgicon" src="{{icon_edit}}" mode="aspectFit"/>
+          </block>
+          <view class="btn-text-bottom">编辑</view>
+        </button>
+      <!-- <view style="display: flex;"> -->
+        <button @tap="toSee()" disabled="{{demand.status1==0}}" class="weui-btn btn-block btn-flex-full" type="primary">
+          <text wx:if="{{demand.status1 == 0 }}">暂无响应者</text>
+          <text wx:else>查看响应者</text>
+        </button>
+      <!-- </view> -->
+      </view>
+      <!-- <button slot="placeholder" class="weui-btn btn-block" type="primary">借阅</button> -->
+    </Screen>
+
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { service } from '../../config.js'
+  import base from '../../mixins/base'
+  import user from '../../mixins/user'
+  import publicProcess from '../../mixins/publicProcess'
+  import Screen from '../../components/screen'
+
+  export default class mainDetail extends wepy.page {
+    mixins = [base, user,publicProcess]
+    config = {
+      navigationBarTitleText: '需求详情'
+    }
+    data = {
+      icon_delete: '/images/icon/icon-delete.png',
+      icon_delete_active: '/images/icon/icon-delete-active.png',
+      icon_edit: '/images/icon/icon-edit.png',
+      icon_edit_active: '/images/icon/icon-edit-active.png',
+      navigate: false,
+      date:'',
+      time:'',
+      demand: {},
+      demandlist:{},
+      remark:''
+    }
+
+    computed = {
+      isEnabled() {
+        return Boolean(this.demand && +this.demand.status == '0')
+      }
+    }
+
+    async onLoad(query) {
+      console.log(query)
+      this.demand = query
+      let res = await wepy.request({
+      url: service.host + '/demands/'+ this.$parent.globalData.id,
+      data:{
+        'type': 0
+      },
+      method: 'GET'
+      })
+      const list = res.data
+      for(var i=0;i<list.length;i++){
+        if(list[i].id == query.id){
+          this.demandlist = list[i]
+          this.remark = this.convertHtmlToText(list[i].remark)
+          this.date = this.demand.date.substring(0,10)
+          this.time = this.demand.date.substring(11,19)
+        }
+      }
+      this.$apply()
+    }
+
+    onShow() {
+      // 初始化页面数据
+      this.initPageData()
+    }
+
+    onPullDownRefresh() {
+      this.initPageData()
+    }
+
+  
+    // 初始化页面数据
+    initPageData() {
+      wx.stopPullDownRefresh()
+     
+    }
+
+    methods = {
+      toEdit(){
+        wx.navigateTo({
+          url: '/pages/user/demand/editMedal?id='+this.demand.id+'&serviceItem='+this.demand.serviceItem+
+          '&date='+this.demand.date+'&duration='+this.demand.duration+'&title='+this.demand.title+'&content='+this.remark
+        })
+      },
+      async toDelete(){
+        let modal = await wepy.showModal({
+          title: '删除提醒',
+          content: '您确认要删除这条需求吗？删除后将不可恢复！',
+          confirmColor: '#049BFF'
+        })
+        console.log(modal)
+        if(modal.confirm){
+              let res = await wepy.request({
+                url: service.host + '/requirement/'+this.demand.id, //开发者服务器接口地址",
+                method:'DELETE'
+              });
+              console.log("删除需求："+res.data.num )
+              if(res.data.num == 1){
+                wx.showToast({
+                    title: '已删除',
+                    icon: 'success',
+                    duration: 800
+                  });
+                  setTimeout(() => {
+                      wx.navigateTo({url:'/pages/user/demand/myDemand'});
+                    }, 800);
+              }
+              else{
+                 wx.showToast({
+                    title: '请重试',
+                    icon: 'loading',
+                    duration: 800
+                  });
+              }
+            }
+      },
+      async toSee() {
+         let res = await wepy.request({
+           url: service.host + '/service/userinfo', //开发者服务器接口地址",
+           data: {
+             'ServiceID' : this.demand.id,
+             'type' : 1
+           },
+           method: 'GET'
+         });
+         console.log(res)
+         var volunteer = res.data
+         if(res.data!=null){
+           wepy.showModal({
+             title: '志愿者信息', //提示的标题,
+             content: '志愿者姓名:'+volunteer.name+'\r\n志愿者性别:'+volunteer.gender+'\r\n志愿者身份证号:'+volunteer.IDNumber
+             +'\r\n邮箱地址:'+volunteer.email+'\r\n联系方式:'+volunteer.phone, //提示的内容,
+             showCancel: false, 
+             confirmColor: '#049BFF'
+           });
+           
+          }else{
+            wepy.showToast({
+              title: '请重试',
+              icon: 'loading',
+              duration: 800
+            });
+          }
+         this.$apply()
+      }
+    }
+
+    components = {
+      Screen
+    }
+  }
+</script>
+
+<style lang="less">
+@import "../../styles/custom/fn.less";
+
+.main-detail{
+  .weui-cell__ft{
+    color: black;
+    word-break: break-all; 
+    align-content: right;
+  }
+  .weui-cell{
+    margin:10rpx;
+  }
+  .detail-tags{
+    .h4();
+    padding: 0.4em 0;
+  }
+  .btn-flex-1{
+    padding: 0;
+    width: 3.5em;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+  .btn-flex-full{
+    flex: 1 1 auto;
+  }
+  .btn-text-bottom{
+    .h5();
+    line-height: 1;
+    color: #777;
+  }
+  .weui-cell__bd{
+    width: 35%;
+  }
+
+}
+</style>

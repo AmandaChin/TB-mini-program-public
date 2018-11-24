@@ -1,0 +1,194 @@
+<template>
+  <view class="course-index">
+    <view class="navbar page">
+        <view class="page__bd">
+            <view class="weui-tab">
+                <view class="weui-navbar">
+                    <view wx:for="{{tabs}}" wx:key="*this" id="{{index}}" class="weui-navbar__item {{activeIndex == index ? 'weui-bar__item_on' : ''}}" @tap="tabClick">
+                        <view class="weui-navbar__title">{{item}}</view>
+                    </view>
+                    <view class="weui-navbar__slider" style="left: {{sliderLeft}}px; transform: translateX({{sliderOffset}}px); -webkit-transform: translateX({{sliderOffset}}px);"></view>
+                </view>
+                <view class="weui-tab__panel">
+                    <view class="weui-tab__content" hidden="{{activeIndex != 0}}">
+                      <CourseList1 :list.sync="list1" title=""
+                      :page.sync="pagetype1" :OrderType.sync="OrderType" :ownOrder.sync="ownOrder"
+                      :loading.sync="loading1" :noMore.sync="noMoreList1"> </CourseList1>
+                    </view>
+                    <view class="weui-tab__content" hidden="{{activeIndex != 1}}">
+                      <CourseList2 :list.sync="list2" title=""
+                      :loading.sync="loading2" :noMore.sync="noMoreList2" :ownOrder.sync="ownOrder"
+                      :page.sync="pagetype2" :OrderLocation.sync="OrderLocation"> </CourseList2>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import { service } from '../../../config.js'
+import base from '../../../mixins/base'
+import publicProcess from '../../../mixins/publicProcess'
+import CourseList from '../../../components/courseList'
+const sliderWidth = 96; // 需要设置slider的宽度，用于计算中间位置
+export default class pageIndex extends wepy.page {
+  mixins = [base, publicProcess]
+  config = {
+    navigationBarTitleText: '我的课程',
+    navigationBarTextStyle: 'white',
+    navigationBarBackgroundColor: '#049BFF',
+    enablePullDownRefresh: false
+  }
+  data = {
+    OrderType:true,
+    OrderLocation:true,
+    //1代表是个人课程，默认0
+    ownOrder:1,
+    tabs: ['线上课程', '线下课程'],
+    activeIndex: 0,
+    sliderOffset: 0,
+    sliderLeft: 0,
+    pagetype1:'myOnlineCourses',
+    pagetype2:'myOfflineCourses',
+    noMoreList1: false,
+    loading1: false,
+    noMoreList2: false,
+    loading2: false,
+    list1: [],
+    list2: [],
+    page: 0,
+    size: 5
+  }
+  methods = {
+    tabClick (e) {
+      this.sliderOffset = e.currentTarget.offsetLeft;
+      this.activeIndex = e.currentTarget.id;
+    }
+  }
+  async onLoad () {
+    let res = await wepy.getSystemInfo();
+
+    this.sliderLeft = (res.windowWidth / this.tabs.length - sliderWidth) / 2;
+    this.sliderOffset = res.windowWidth / this.tabs.length * this.activeIndex;
+
+    this.initPageData()
+  }
+
+  onShow() {
+    //this.initUserData()
+    this.initPageData()
+  }
+
+  onPullDownRefresh() {
+    //this.initUserData()
+    this.initPageData()
+  }
+
+  onReachBottom() {
+    setTimeout(() => {
+      this.initPageData()
+      this.$apply()
+    }, 200);
+  }
+
+  // 初始化页面数据
+  initPageData() {
+    // 请求列表
+    this.getOnlineCourses()
+    this.getOfflinCourses()
+  }
+
+  async getOnlineCourses() {
+    let res = await wepy.request({
+        url: service.host + '/online-courses/student/courses',
+        data:{
+        'UserID': parseInt(this.$parent.globalData.id)
+        },
+        method: 'GET'
+    })
+    console.log(res.data)
+    const data = res.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(data) && data.length === 0) {
+      this.noMoreList1 = true
+      return
+       }
+    this.list1 = this.getItems(data,data.length)
+    this.$apply()
+
+  }
+  async getOfflinCourses() {
+    let res = await wepy.request({
+         url: service.host + '/offline-courses/student/courses',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id)
+         },
+         method: 'GET'
+    })
+    console.log(res.data)
+    const data = res.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(data) && data.length === 0) {
+      this.noMoreList2 = true
+      return
+    }
+    this.list2 = this.getItems(data,data.length)
+    this.$apply()
+
+  }
+
+ // 处理图书列表
+  getItems(data,len) {
+    return this.getArray(data).map((item, index) => {
+      var time
+      if(item.date){
+        time = this.formatDateTime(item.date)
+      }else if(item.time){
+        time = this.formatDateTime(item.time)
+      }
+      // 拼接示例数据
+      return {
+        id: item.id,
+        title: item.title,
+        teacher: item.teacher,
+        author: item.author,
+        price: item.price,
+        time: time,
+        content: this.convertHtmlToText(item.content),
+        abstract: this.convertHtmlToText(item.abstract),
+        place: item.place,
+        currentnum:item.currentnum,
+        limit:item.limit,
+        type:item.type
+        
+      }
+    })
+    this.$apply()
+  }
+
+  components = {
+    CourseList1 : CourseList,
+    CourseList2 : CourseList
+  }
+}
+</script>
+
+<style lang="less">
+@import "../../../styles/weui/widget/weui-tab/weui-navbar.wxss";
+.navbar {
+    .page,
+    .page__bd{
+        height: 100%;
+    }
+    .page__bd{
+        padding-bottom: 0;
+    }
+    .weui-tab__content{
+        padding-top: 60px;
+        //text-align: center;
+    }
+}
+</style>

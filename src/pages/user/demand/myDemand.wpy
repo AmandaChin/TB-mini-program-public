@@ -1,0 +1,127 @@
+<template>
+ <view>
+   <view class="navbar page">
+      <booklist :list.sync="list"  title="历史需求"
+                :loading.sync="loading" :noMore.sync="noMoreList" :OrderType.sync="OrderType"  :OrderStatus.sync="OrderStatus" :page.sync="pagetype"></booklist>
+    </view>
+    
+ </view>
+</template>
+
+
+<script>
+import booklist from '../../../components/bookList'
+import wepy from 'wepy'
+import { service } from '../../../config.js'
+import base from '../../../mixins/base'
+import user from '../../../mixins/user'
+import publicProcess from '../../../mixins/publicProcess'
+const sliderWidth = 96; // 需要设置slider的宽度，用于计算中间位置
+export default class myDemand extends wepy.page {
+   mixins = [base, user ,publicProcess]
+  config = {
+    navigationBarTitleText: '我的需求',
+    enablePullDownRefresh: false
+  }
+  data = {
+    list: [],
+    noMoreList: false,
+    loading: false,
+    OrderType: true,
+    OrderStatus:true,
+    pagetype: 'historyDemand'
+  }
+
+  methods = {
+   
+  }
+
+  async onLoad () {
+    this.initPageData()
+  }
+
+  onReachBottom() {
+    setTimeout(() => {
+      this.updateDemandList()
+      this.$apply()
+    }, 200)
+  }
+
+  // 初始化页面数据
+  initPageData() {
+    // 初始化参数
+    this.page = 0
+    // 请求列表
+    this.updateDemandList()
+  }
+
+  async updateDemandList() {
+    //if (this.loading || this.noMoreList) return
+    let res = await wepy.request({
+      url: service.host + '/demands/'+ this.$parent.globalData.id,
+      data:{
+        'type': 0
+      },
+      method: 'GET'
+    })
+    console.log('update')
+    console.log(res)
+    const list = res.data
+    this.list = this.getItems(list)
+    this.$apply()
+
+  }
+
+  // 处理列表
+  getItems(data) {
+    //const len = this.list.length
+    return this.getArray(data).map((item, index) => {
+      var isOnDate = 'false';
+      if(new Date(item.endTime).getTime()<new Date().getTime()){
+        isOnDate = 'true'
+      }
+      // 拼接示例数据
+      return {
+        id: item.id,
+        serviceItem:item.serviceItem,
+        title: item.serviceContent,
+        name: item.name,
+        date: this.formatDateTime(item.startTime),
+        content: this.convertHtmlToText(item.remark),
+        status1: item.status1,
+        status2: item.status2,
+        duration: item.duration,
+        phone:item.phone,
+        //判断是发布/响应
+        mutualtype:item.type,
+        type: '0',
+        //判断是否过期
+        isOnDate:isOnDate
+      }
+    })
+    this.$apply()
+  }
+  
+  components = {
+    booklist
+  }
+ 
+}
+</script>
+
+<style lang="less">
+@import "../../../styles/weui/widget/weui-tab/weui-navbar.wxss";
+.navbar {
+    .page,
+    .page__bd{
+        height: 100%;
+    }
+    .page__bd{
+        padding-bottom: 0;
+    }
+    .weui-tab__content{
+        padding-top: 60px;
+        text-align: center;
+    }
+}
+</style>

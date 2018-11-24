@@ -1,0 +1,251 @@
+<template>
+  <view class="page-index">
+    <view class="navbar page">
+        <view class="page__bd">
+            <view class="weui-tab">
+                <view class="weui-navbar">
+                    <view wx:for="{{tabs}}" wx:key="*this" id="{{index}}" class="weui-navbar__item {{activeIndex == index ? 'weui-bar__item_on' : ''}}" @tap="tabClick">
+                        <view class="weui-navbar__title">{{item}}</view>
+                    </view>
+                    <view class="weui-navbar__slider" style="left: {{sliderLeft}}px; transform: translateX({{sliderOffset}}px); -webkit-transform: translateX({{sliderOffset}}px);"></view>
+                </view>
+                <view class="weui-tab__panel">
+                    <view class="weui-tab__content" hidden="{{activeIndex != 0}}">
+                      <MedalList1 :list.sync="list1" :title.sync="medalnum" type="1"
+                      :loading.sync="loading1" :noMore.sync="noMoreList1"> </MedalList1>
+                      <JewelList1 :list.sync="jlist1" :title.sync="jewelnum" type="0"
+                      :loading.sync="jloading1" :noMore.sync="jnoMoreList1"> </JewelList1>
+                    </view>
+                    <view class="weui-tab__content" hidden="{{activeIndex != 1}}">
+                      <MedalList2 :list.sync="list2" :title.sync="medalnum" type="1"
+                      :loading.sync="loading2" :noMore.sync="noMoreList2"> </MedalList2>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import { service } from '../../../config.js'
+import base from '../../../mixins/base'
+import publicProcess from '../../../mixins/publicProcess'
+import MedalList from '../../../components/MedalList'
+const sliderWidth = 96; // 需要设置slider的宽度，用于计算中间位置
+export default class pageIndex extends wepy.page {
+  mixins = [base,publicProcess]
+  config = {
+    navigationBarTitleText: '我的勋章',
+    navigationBarTextStyle: 'white',
+    navigationBarBackgroundColor: '#049BFF',
+    enablePullDownRefresh: false
+  }
+  data = {
+    tabs: ['已获得', '已转移'],
+    activeIndex: 0,
+    sliderOffset: 0,
+    sliderLeft: 0,
+    noMoreList1: false,
+    loading1: false,
+    jnoMoreList1: false,
+    jloading1: false,
+    noMoreList2: false,
+    loading2: false,
+    medalnum:'勋章币余额：0.00',
+    jewelnum:'宝石币余额：0.00',
+    list1: [],
+    list2: [],
+    jlist1: [],
+    jlist2: [],
+    image:['http://timebank-icon.oss-cn-beijing.aliyuncs.com/finish.png','http://timebank-icon.oss-cn-beijing.aliyuncs.com/out.png'],
+    page: 0,
+    size: 5
+  }
+  methods = {
+    tabClick (e) {
+      this.sliderOffset = e.currentTarget.offsetLeft;
+      this.activeIndex = e.currentTarget.id;
+    }
+  }
+  async onLoad () {
+    let res = await wepy.getSystemInfo();
+
+    this.sliderLeft = (res.windowWidth / this.tabs.length - sliderWidth) / 2;
+    this.sliderOffset = res.windowWidth / this.tabs.length * this.activeIndex;
+
+    this.initPageData()
+  }
+
+  onShow() {
+    //this.initUserData()
+    this.initPageData()
+  }
+
+  onPullDownRefresh() {
+    //this.initUserData()
+    this.initPageData()
+  }
+
+  onReachBottom() {
+    setTimeout(() => {
+      this.initPageData()
+      this.$apply()
+    }, 200);
+  }
+
+  // 初始化页面数据
+  initPageData() {
+    // 初始化参数
+    this.page = 0
+    // 请求列表
+    this.updateHaveGotList()
+    this.updateApplyList()
+    this.updateJewelHaveGotList()
+    this.getMedalNum()
+    this.getJewelNum()
+  }
+  //获取勋章及宝石币余额
+  async getMedalNum(){
+    let res = await wepy.request({
+         url: service.host + '/wallet/'+ parseInt(this.$parent.globalData.id),
+         method: 'GET'
+    })
+    var num = res.data.coins
+    this.medalnum = '勋章币余额：'+ parseFloat(num).toFixed(2)
+    this.$apply()
+  }
+  async getJewelNum(){
+    let res = await wepy.request({
+         url: service.host + '/jewelwallet/'+parseInt(this.$parent.globalData.id),
+         method: 'GET'
+    })
+    var num = res.data.coins
+    this.jewelnum = '宝石币余额：'+ parseFloat(num).toFixed(2)
+    this.$apply()
+  }
+   //更新勋章列表
+  async updateHaveGotList() {
+    //if (this.loading || this.noMoreList) return
+    let res = await wepy.request({
+         url: service.host + '/transactions',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id),
+           'type' : 1
+         },
+         method: 'GET'
+    })
+    console.log(res)
+    const list = res.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(list) && list.length === 0) {
+      this.noMoreList1 = true
+      return
+       }
+    this.list1 = this.getItems(list,0)
+    this.$apply()
+
+  }
+  async updateApplyList() {
+    //if (this.loading || this.noMoreList) return
+    let res = await wepy.request({
+         url: service.host + '/transactions',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id),
+           'type': 0
+         },
+         method: 'GET'
+    })
+    console.log(res)
+    const list = res.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(list) && list.length === 0) {
+      this.noMoreList2 = true
+      return
+       }
+    this.list2 = this.getItems(list,1)
+    this.$apply()
+
+  }
+  //更新宝石列表
+   async updateJewelHaveGotList() {
+    //if (this.loading || this.noMoreList) return
+    let res = await wepy.request({
+         url: service.host + '/jeweltransactions',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id)
+         },
+         method: 'GET'
+    })
+    console.log(res)
+    const list = res.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(list) && list.length === 0) {
+      this.jnoMoreList1 = true
+      return
+       }
+    this.jlist1 = this.getItems2(list,0)
+    this.$apply()
+  }
+
+
+  // 处理勋章列表
+  getItems(data,i) {
+    //const len = this.list.length
+    return this.getArray(data).map((item, index) => {
+      // 拼接示例数据
+      return {
+        serviceId: item.ServiceID,
+        num: item.medal,
+        image: this.image[i],
+        transferHASH:item.transferHash,
+        time: this.formatDateTime(item.getmedaltime),
+        title:'勋章币',
+        //判断是获得还是转移 0获得1转移
+        transeType:i
+      }
+    })
+    this.$apply()
+  }
+  //处理宝石列表
+  getItems2(data,i) {
+    //const len = this.list.length
+    return this.getArray(data).map((item, index) => {
+      // 拼接示例数据
+      return {
+        serviceId: item.ServiceID,
+        num: 1,
+        image: this.image[i],
+        transferHASH:item.transferHash,
+        time: this.formatDateTime(item.getjeweltime),
+        title:'宝石币'
+      }
+    })
+    this.$apply()
+  }
+
+  components = {
+    MedalList1 : MedalList,
+    MedalList2 : MedalList,
+    JewelList1 : MedalList
+  }
+}
+</script>
+
+<style lang="less">
+@import "../../../styles/weui/widget/weui-tab/weui-navbar.wxss";
+.navbar {
+    .page,
+    .page__bd{
+        height: 100%;
+    }
+    .page__bd{
+        padding-bottom: 0;
+    }
+    .weui-tab__content{
+        padding-top: 60px;
+        //text-align: center;
+    }
+}
+</style>

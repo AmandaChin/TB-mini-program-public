@@ -1,0 +1,97 @@
+<template>
+  <view class="page-notice">
+    <notice :list.sync="list" title="通知列表"
+     :loading.sync="loading" :noMore.sync="noMoreList"></notice>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import { service } from '../../../config.js'
+import base from '../../../mixins/base'
+import user from '../../../mixins/user'
+import publicProcess from '../../../mixins/publicProcess'
+import notice from '../../../components/notice'
+
+export default class Notice extends wepy.page {
+  mixins = [base, user, publicProcess]
+  config = {
+    navigationBarTitleText: '通知',
+    navigationBarTextStyle: 'white',
+    navigationBarBackgroundColor: '#049BFF'
+  }
+  data = {
+
+    noMoreList: false,
+    loading: false,
+    list: [],
+    page: 0,
+    size: 5
+  }
+
+  onReady() {
+    this.initPageData()
+  }
+  onShow() {
+    this.initPageData()
+  }
+  onPullDownRefresh() {
+    this.initPageData()
+  }
+
+  onReachBottom() {
+    setTimeout(() => {
+      this.updateDemandList(this.page)
+      this.$apply()
+    }, 200)
+  }
+
+  
+  //初始化列表
+  async initPageData() {
+      // 请求列表
+      this.updateDemandList()
+      this.$apply()
+    }
+  // 更新通知列表
+  async updateDemandList() {
+    let res = await wepy.request({
+         url: service.host + '/notices/'+this.$parent.globalData.id,
+         method: 'GET'
+    })
+    console.log(res.data)
+    this.list = this.getItems(res.data)
+    this.noMoreList = true
+    this.$apply()
+
+  }
+  // 处理通知列表
+  getItems(data) {
+    const len = this.list.length
+    return this.getArray(data).map((item, index) => {
+      console.log(item)
+      const xlen = len + index
+      // 拼接示例数据
+      return {
+        id: xlen,
+        title: item.title,
+        name: item.author,
+        time: this.formatDateTime(item.createdAt).substring(0,10),
+        content: this.convertHtmlToText(item.content),
+        checked: item.checked
+      }
+    })
+  }
+
+  methods = {}
+
+  components = {
+    notice
+  }
+}
+</script>
+
+<style lang="less">
+.page-notice {
+}
+</style>

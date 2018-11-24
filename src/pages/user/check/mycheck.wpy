@@ -1,0 +1,371 @@
+<template>
+  <view class="page-index">
+    <view wx:if="{{canCheck}}" class="navbar page">
+        <view class="page__bd">
+            <view class="weui-tab">
+                <view class="weui-navbar">
+                    <view wx:for="{{tabs}}" wx:key="*this" id="{{index}}" class="weui-navbar__item {{activeIndex == index ? 'weui-bar__item_on' : ''}}" @tap="tabClick">
+                        <view class="weui-navbar__title">{{item}}</view>
+                    </view>
+                    <view class="weui-navbar__slider" style="left: {{sliderLeft}}px; transform: translateX({{sliderOffset}}px); -webkit-transform: translateX({{sliderOffset}}px);"></view>
+                </view>
+                <view class="weui-tab__panel">
+                    <view class="weui-tab__content" hidden="{{activeIndex != 0}}">
+                      <CheckList1 :list.sync="servicelist1" title="服务审核"
+                      :loading.sync="loading1" :noMore.sync="noMoreList1" :page.sync="pagetype1"> </CheckList1>
+                    </view>
+                    <view hidden="{{activeIndex != 0}}">
+                      <CheckList2 :list.sync="courselist1" title="课程审核"
+                      :loading.sync="loading2" :noMore.sync="noMoreList2" :page.sync="pagetype2"> </CheckList2>
+                    </view>
+                    <view hidden="{{activeIndex != 0}}">
+                      <CheckList3 :list.sync="teacherlist1" title="教员审核"
+                      :loading.sync="loading3" :noMore.sync="noMoreList3" :page.sync="pagetype3"> </CheckList3>
+                    </view>
+                    <view class="weui-tab__content" hidden="{{activeIndex != 1}}">
+                      <CheckList4 :list.sync="servicelist2" title="服务审核"
+                      :loading.sync="loading4" :noMore.sync="noMoreList4" :page.sync="pagetype1"> </CheckList4>
+                    </view>
+                    <view hidden="{{activeIndex != 1}}">
+                      <CheckList5 :list.sync="courselist2" title="课程审核"
+                      :loading.sync="loading5" :noMore.sync="noMoreList5" :page.sync="pagetype2"> </CheckList5>
+                    </view>
+                    <view hidden="{{activeIndex != 1}}">
+                      <CheckList6 :list.sync="teacherlist2" title="教员审核"
+                      :loading.sync="loading6" :noMore.sync="noMoreList6" :page.sync="pagetype3"> </CheckList6>
+                    </view>
+                </view>
+            </view>
+        </view>
+    </view>
+    <view wx:else class="text-center tip-page page-borrow-tip">
+      <block>
+        <icon class="tip-icon" type="cancel" size="70" color="#bbb"></icon>
+        <view class="h4">您没有审核权限哦~</view>
+      </block>
+   </view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import { service } from '../../../config.js'
+import base from '../../../mixins/base'
+import publicProcess from '../../../mixins/publicProcess'
+import checklist from '../../../components/checklist'
+const sliderWidth = 96; // 需要设置slider的宽度，用于计算中间位置
+export default class pageIndex extends wepy.page {
+  mixins = [base, publicProcess]
+  config = {
+    navigationBarTitleText: '我的审核',
+    navigationBarTextStyle: 'white',
+    navigationBarBackgroundColor: '#049BFF',
+    enablePullDownRefresh: false
+  }
+  data = {
+    tabs: ['已审核', '待审核'],
+    activeIndex: 0,
+    sliderOffset: 0,
+    sliderLeft: 0,
+    noMoreList1: false,
+    loading1: false,
+    noMoreList2: false,
+    loading2: false,
+    noMoreList3: false,
+    loading3: false,
+    noMoreList4: false,
+    loading4: false,
+    noMoreList5: false,
+    loading5: false,
+    noMoreList6: false,
+    loading6: false,
+    servicelist1: [],
+    servicelist2: [],
+    courselist1:[],
+    courselist2:[],
+    teacherlist1:[],
+    teacherlist2:[],
+    pagetype1:'servicedetail',
+    pagetype2:'coursedetail',
+    pagetype3:'teacherdetail',
+    image:['http://timebank-icon.oss-cn-beijing.aliyuncs.com/finish.png','http://timebank-icon.oss-cn-beijing.aliyuncs.com/out.png'],
+    page: 0,
+    size: 5,
+    canCheck:''
+  }
+  methods = {
+    tabClick (e) {
+      this.sliderOffset = e.currentTarget.offsetLeft;
+      this.activeIndex = e.currentTarget.id;
+    }
+  }
+  async onLoad () {
+    let res = await wepy.getSystemInfo();
+
+    this.sliderLeft = (res.windowWidth / this.tabs.length - sliderWidth) / 2;
+    this.sliderOffset = res.windowWidth / this.tabs.length * this.activeIndex;
+
+    let judgeCheck = await wepy.request({
+      url: service.host + '/judge', //开发者服务器接口地址",
+      data: {
+        'id': parseInt(this.$parent.globalData.id)
+      },
+      method: 'GET'
+      
+    });
+    this.canCheck = judgeCheck.data.num
+    this.initPageData()
+    this.$apply()
+  }
+
+  onShow() {
+    //this.initUserData()
+    this.initPageData()
+  }
+
+  onPullDownRefresh() {
+    //this.initUserData()
+    this.initPageData()
+  }
+
+  onReachBottom() {
+    setTimeout(() => {
+      this.initPageData()
+      this.$apply()
+    }, 200);
+  }
+
+  // 初始化页面数据
+  async initPageData() {
+    // 初始化参数
+    this.page = 0
+    // 请求列表
+    await this.getServiceCheckedList()
+    await this.getCourseCheckedList()
+    await this.getTeacherCheckedList()
+    await this.getServiceCheckingList()
+    await this.getCourseCheckingList()
+    await this.getTeacherCheckingList()
+    this.$apply()
+  }
+   //更新已审核列表
+  async getServiceCheckedList() {
+   //服务
+    let serviceRes = await wepy.request({
+         url: service.host + '/reviwer/list',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id),
+           'status': parseInt(1)
+         },
+         method: 'GET'
+    })
+    console.log(serviceRes)
+    const serviceData = serviceRes.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(serviceData) && serviceData.length === 0) {
+      this.noMoreList1 = true
+      return
+       }
+    this.servicelist1 = this.getServiceItems(serviceData,0,'志愿服务')
+    this.$apply()
+  }
+
+  async getCourseCheckedList() {
+    //课程
+    let courseRes = await wepy.request({
+      url: service.host + '/offline-courses/checked',
+      data:{
+        'UserID': parseInt(this.$parent.globalData.id)
+      },
+        method: 'GET'
+      })
+    console.log(courseRes)
+    const courseData = courseRes.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(courseData) && courseData.length === 0) {
+      this.noMoreList2 = true
+      return
+    }
+    this.courselist1 = this.getCourseItems(courseData,0,'培训课程')
+    this.$apply()
+  }
+
+  async getTeacherCheckedList() {
+    //教员
+    let teacherRes = await wepy.request({
+      url: service.host + '/qualification/checked',
+      data:{
+        'UserID': parseInt(this.$parent.globalData.id)
+      },
+      method: 'GET'
+    })
+    console.log(teacherRes)
+    const teacherData = teacherRes.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(teacherData) && teacherData.length === 0) {
+    this.noMoreList3 = true
+    return
+    }
+    this.teacherlist1 = this.getTeacherItems(teacherData,0,'教员审核')
+    this.$apply()
+  }
+
+  computed ={
+    canCheck() {
+        if(this.canCheck == 1){
+          return true;
+        }else{
+          return false;
+        }
+    },
+  }
+
+  //更新待审核列表
+  async getServiceCheckingList() {
+    //服务
+    let serviceRes = await wepy.request({
+         url: service.host + '/reviwer/list',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id),
+           'status': parseInt(0)
+         },
+         method: 'GET'
+    })
+    console.log(serviceRes)
+    const serviceData = serviceRes.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(serviceData) && serviceData.length === 0) {
+      this.noMoreList4 = true
+      return
+       }
+    this.servicelist2 = this.getServiceItems(serviceData,1,'志愿服务')
+    this.$apply()
+  }
+
+  async getCourseCheckingList() {
+    //课程
+    let courseRes = await wepy.request({
+         url: service.host + '/offline-courses/unchecked',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id)
+         },
+         method: 'GET'
+    })
+    console.log(courseRes)
+    const courseData = courseRes.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(courseData) && courseData.length === 0) {
+      this.noMoreList5 = true
+      return
+       }
+    this.courselist2 = this.getCourseItems(courseData,1,'培训课程')
+    this.$apply()
+  }
+
+  async getTeacherCheckingList() {
+    //教员
+    let teacherRes = await wepy.request({
+         url: service.host + '/qualification/unchecked',
+         data:{
+           'UserID': parseInt(this.$parent.globalData.id)
+         },
+         method: 'GET'
+    })
+    console.log(teacherRes)
+    const teacherData = teacherRes.data
+    // 请求到空列表后就认为没有更多了
+    if (this.isArray(teacherData) && teacherData.length === 0) {
+      this.noMoreList6 = true
+      return
+       }
+    this.teacherlist2 = this.getTeacherItems(teacherData,1,'教员审核')
+    this.$apply()
+  }
+
+  // 处理列表
+  getServiceItems(data,i,type) {
+    //type为审核服务类型
+    return this.getArray(data).map((item, index) => {
+      var applyTime = this.formatDateTime(item.applyTime)
+      // 拼接示例数据
+      return {
+        id:item.serviceId,
+        type: type,
+        time: this.formatDateTime(item.applyTime),
+        name: item.volunteerName,
+        image: this.image[i],
+        //0为checked,1为checking
+        status: i,
+        waitday : Math.floor((new Date().getTime() - Date.parse(applyTime))/(24*3600*1000)),
+        waithour : Math.floor((( new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))/(3600*1000)),
+        waitminues : Math.floor((((new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))%(3600*1000))/(60*1000))
+      }
+    })
+  }
+  getCourseItems(data,i,type) {
+    //type为审核服务类型
+    return this.getArray(data).map((item, index) => {
+      // 拼接示例数据
+      var applyTime = this.formatDateTime(item.createdAt)
+      return {
+        id:item.id,
+        type: type,
+        time: this.formatDateTime(item.createdAt),
+        name: item.author.name,
+        image: this.image[i],
+        //0为checked,1为checking
+        status: i,
+        waitday : Math.floor((new Date().getTime() - Date.parse(applyTime))/(24*3600*1000)),
+        waithour : Math.floor((( new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))/(3600*1000)),
+        waitminues : Math.floor((((new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))%(3600*1000))/(60*1000))
+      }
+    })
+  }
+  getTeacherItems(data,i,type) {
+    //type为审核服务类型
+    return this.getArray(data).map((item, index) => {
+      var applyTime = this.formatDateTime(item.createdAt)
+      // 拼接示例数据
+      return {
+        id:item.id,
+        type: type,
+        time: this.formatDateTime(item.createdAt),
+        name: item.author.name,
+        image: this.image[i],
+        //0为checked,1为checking
+        status: i,
+        waitday : Math.floor((new Date().getTime() - Date.parse(applyTime))/(24*3600*1000)),
+        waithour : Math.floor((( new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))/(3600*1000)),
+        waitminues : Math.floor((((new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))%(3600*1000))/(60*1000))
+      }
+    })
+  }
+
+
+  components = {
+    CheckList1 : checklist,
+    CheckList2 : checklist,
+    CheckList3 : checklist,
+    CheckList4 : checklist,
+    CheckList5 : checklist,
+    CheckList6 : checklist
+  }
+}
+</script>
+
+<style lang="less">
+@import "../../../styles/weui/widget/weui-tab/weui-navbar.wxss";
+.navbar {
+    .page,
+    .page__bd{
+        height: 100%;
+    }
+    .page__bd{
+        padding-bottom: 0;
+    }
+    .weui-tab__content{
+        padding-top: 60px;
+        //text-align: center;
+    }
+}
+</style>

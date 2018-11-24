@@ -1,0 +1,187 @@
+<template>
+  <view class="main-search">
+    <view class="button1">
+      <view wx:if="{{items1}}">
+        <radioButton1  :title.sync="title1" :list.sync="items1" :value.sync = "value1"></radioButton1>
+      </view>
+    </view>
+
+    <view class="button2">
+    <view wx:if="{{items2}}">
+      <radioButton2 :title.sync="title2" :list.sync="items2" :value.sync = "value2"></radioButton2>
+    </view>
+    </view>
+    <block>
+      <view class="checkbox-title">服务时长</view>
+      <view class="weui-cell weui-cell_input">
+        <view class="weui-cell__bd h3">
+            <picker class="dateoption" @change="bindDurationChange" value="{{durationIndex}}" range="{{durations}}">
+              <text wx:if="{{durationisnull}}" style="color:#999;font-size:30rpx;">请选择服务时长</text>
+              <view wx:else> <text class="weui-input">{{durations[durationIndex]}}小时</text> </view>
+            </picker>
+        </view>
+      </view>
+    </block>
+    <block>
+      <view class="checkbox-title">服务日期</view>
+      <view class="weui-cell weui-cell_input">
+        <view class="weui-cell__bd h3">
+          <picker class="dateoption" mode="date" value="{{date}}" start="{{today}}" end="{{endday}}" @change="bindDateChange">
+            <text wx:if="{{dateisnull}}" style="color:#999;font-size:30rpx;">请选择服务日期</text>
+            <view wx:else ><text class="weui-input">{{date}}</text></view>
+          </picker>
+        </view>
+      </view>
+    </block>
+
+    <view class="button4">
+
+    <block wx:if="{{items4}}">
+      <radioButton4 :title.sync="title4" :list.sync="items4" :value.sync = "value4"></radioButton4>
+    </block>
+    <button @tap="search" class="weui-btn" type="primary">搜索</button>
+    <button @tap="back" class="weui-btn" type="default">回首页</button>
+  </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import { service } from '../../config.js'
+  import base from '../../mixins/base'
+  import radioButton from '../../components/radioButton'
+
+  export default class mainSearch extends wepy.page {
+    mixins = [base]
+    config = {
+      navigationBarTitleText: '条件查询'
+    }
+    data = {
+      title1: '信息类型',
+      title2: '内容类型',
+      title3: '服务日期',
+      title4: '地区选择',
+      value1:'0',
+      value2:'',
+      value4:'4',
+      items1: [
+        {value:'0',name:'需求信息',checked:true},
+        {value:'1',name:'志愿信息',checked:false}
+        ],
+      items2: [],
+      items3: [],
+      items4: [{value:'4',name:'全国不限',checked:true},{value:'3',name:'同区选择',checked:false},{value:'2',name:'同市选择',checked:false},{value:'1',name:'同省选择',checked:false}],
+      lists: [],
+      durations: ['1','1.5','2','2.5','3','3.5','4'],
+      durationIndex: -1,
+      dateisnull : true,
+      durationisnull:true,
+      date: ''
+    }
+
+    async onLoad() {
+      let res = await this.initPageData()
+      this.items2 = res
+      console.log(this.items2)
+      this.$apply()
+    }
+
+    onReady() {
+    }
+
+    onPullDownRefresh() {
+      wx.stopPullDownRefresh()
+    }
+
+    // 初始化页面数据
+    async initPageData() {
+      let res = await wepy.request({
+        url: service.host + '/items', //开发者服务器接口地址",
+        method: 'GET'});
+      var list = res.data
+      var item2 = []
+      for(var i=0; i<=list.length; i++){
+        var item = {}
+        if(i==list.length){
+          item.name = '不限类别'
+          item.value = ''
+          item.checked = true
+          item2.push(item)
+          return item2
+        }
+        else{
+          item.name = list[i].title
+          item.value = list[i].id
+          item.checked = false
+          item2.push(item)
+        }
+      }
+      
+      this.$apply();
+    }
+
+
+    methods = {
+      bindDurationChange (e){
+        this.durationIndex = e.detail.value
+        this.durationisnull = false
+      },
+      bindDateChange (e) {
+        this.date = e.detail.value
+        this.dateisnull = false
+      },
+      search() {
+        var duration = this.durations[this.durationIndex]=='undefined'?this.durations[this.durationIndex]:''
+        wx.navigateTo({
+          url: '/pages/main/searchDetail?type='+this.value1+'&serviceItem='+this.value2+'&startTime='+this.date+'&duration='+duration+'&region='+this.value4
+        })
+      },
+      back(){
+        wx.switchTab({
+          url: '/pages/index'
+        })
+      }
+    }
+
+    components = {
+      radioButton1 : radioButton,
+      radioButton2 : radioButton,
+      radioButton3 : radioButton,
+      radioButton4 : radioButton
+    }
+  }
+</script>
+
+<style lang="less">
+@import "../../styles/custom/fn.less";
+page{
+  background: #fff;
+}
+.checkbox-title {
+    .h4();
+    color: @weuiColorPrimary;
+    padding-bottom: 0.8em;
+  }
+
+.main-search{
+  position:relative;
+  padding: 14px 15px 10px;
+}
+.dateoption{
+   display: block;
+    width: 100%;
+    padding: 0.5em 0;
+    line-height: 1;
+    .h4();
+    color: #999;
+    background: transparent;
+    border: 1rpx solid #ddd;
+    border-radius: 1em;
+    text-align: center;
+}
+.dateoption-value{
+  color: #fff;
+    background: @weuiColorPrimary;
+    border-color: @weuiColorPrimary;
+}
+</style>

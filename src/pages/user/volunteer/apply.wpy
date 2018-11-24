@@ -1,0 +1,260 @@
+<template>
+<view class="page_apply">
+    <view class="weui-panel">
+         <view class="page__hd">
+            <view class="page__title" style="font-size: larger;text-align: center;color: #10aefe;">请填写申请信息</view>
+        </view> 
+
+      <view class="weui-cell ">
+        <view class="weui-cell__bd">
+          <view class="weui-label reset-label-left h3">真实服务日期</view>
+        </view>
+        <view class="weui-cell__ft">
+          <picker mode="date" value="{{realdate}}" end="{{today}}"  @change="bindDateChange">
+            <view ><text class="weui-select weui-select_in-select-after h3">{{realdate}}</text></view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="weui-cell">
+        <view class="weui-cell__bd">
+          <view class="weui-label reset-label-left h3">真实开始时间</view>
+        </view>
+        <view class="weui-cell__ft">
+            <picker @change="bindBeginChange" value="{{beginIndex}}" range="{{begintimes}}">
+              <text class="weui-select weui-select_in-select-after h3">{{realstarttime}}</text>
+            </picker>
+        </view>
+      </view>
+      <view class="weui-cell">
+        <view class="weui-cell__bd">
+          <view class="weui-label reset-label-left h3">真实结束时间</view>
+        </view>
+        <view class="weui-cell__ft">
+            <picker @change="bindEndChange" value="{{endIndex}}" range="{{endtimes}}">
+              <text class="weui-select weui-select_in-select-after h3">{{realendtime}}</text>
+            </picker>
+         
+        </view>
+      </view>
+        <view class="weui-cells weui-cells_after-title">
+            <view class="weui-media-box weui-media-box_text borrow-address">
+                <view class="weui-media-box__title h3 color-666">详细信息</view>
+                <view class="weui-cell__bd h3">
+                    <textarea @input="bindTextAreaInput" class="weui-textarea h3" value="{{remark}}" placeholder="请输入详细描述" style="height: 3.3em" />
+                </view>
+            </view>
+        </view> 
+        <view class="page__bd">
+            <view class="weui-cells">
+                <view class="weui-cell">
+                    <view class="weui-cell__bd">
+                        <view class="weui-uploader">
+                            <view class="weui-uploader__hd">
+                                <view class="weui-uploader__title">上传凭证</view>
+                                <view class="weui-uploader__info">{{files.length}}/4</view>
+                            </view>
+                            <view class="weui-uploader__bd">
+                                <view class="weui-uploader__files" id="uploaderFiles">
+                                    <block wx:for="{{files}}" wx:key="*this">
+                                        <view class="weui-uploader__file" @tap="previewImage" id="{{item}}">
+                                            <image class="weui-uploader__img" src="{{item}}" mode="aspectFill" />
+                                        </view>
+                                    </block>
+                                </view>
+                                <view hidden="{{files.length==4}}" class="weui-uploader__input-box">
+                                    <view class="weui-uploader__input" @tap="chooseImage"></view>
+                                </view>
+                            </view>
+                        </view>
+                </view>
+            </view>
+        </view>
+        </view>
+     <button @tap="submit()"  class="weui-btn btn-block btn-flex-full" type="primary">申请</button>
+    </view>
+</view>
+</template>
+
+<script>
+import wepy from 'wepy'
+  import { service } from '../../../config.js'
+  import base from '../../../mixins/base'
+  import user from '../../../mixins/user'
+  import publicProcess from '../../../mixins/publicProcess'
+export default class apply extends wepy.page {
+    mixins = [base, user,publicProcess]
+  config = {
+    navigationBarTitleText: '申请勋章',
+    enablePullDownRefresh: false
+  }
+  data = {
+    id:'',
+    files:[],
+    starttimeisnull : true,
+    endtimeisnull: true,
+    realdate:'',
+    realendtime:'',
+    realstarttime:'',
+    begintimes: ['5:30','6:00','6:30','7:00','7:30','8:00','8:30','9:00','9:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00'],
+    beginIndex: -1,
+    endtimes: ['5:30','6:00','6:30','7:00','7:30','8:00','8:30','9:00','9:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00'],
+    endIndex: -1,
+    remark:''
+  }
+  computed = {
+     today(){
+        var today = new Date() - 8*3600*1000
+        return this.formatDateTime(Date(today)).substring(0,10)
+      },
+      begin(){
+        return this.begintimes[this.beginIndex]
+      }
+    //   endtimes(){
+    //       var list = []
+    //       if(this.beginIndex==this.begintimes.length-1){
+    //           return list
+    //       }else{
+    //         for(var i=this.beginIndex;i<this.begintimes.length;i++){
+    //             list.push(this.begintimes[i])
+    //             if(i==this.begintimes.length-1){
+    //                 return list
+    //             }
+    //         }
+    //       }
+          
+    //   }
+  }
+  methods = {
+      bindDateChange (e) {
+        this.realdate = e.detail.value
+      },
+      bindBeginChange (e) {
+        this.beginIndex = e.detail.value
+        this.starttimeisnull = false
+        this.realstarttime = this.begintimes[this.beginIndex]
+        this.endIndex = this.beginIndex
+      },
+      bindEndChange (e) {
+        this.endIndex = e.detail.value
+        this.endtimeisnull = false
+        this.realendtime = this.endtimes[this.endIndex]
+      },
+      bindTextAreaInput(e) {
+         this.remark = e.detail.value
+      },
+      async chooseImage (e) {
+          let result = await wepy.chooseImage({
+              count: 1
+          })
+          console.log(result)
+          for(var i=0;i<result.tempFilePaths.length;i++){
+              var tempFilePaths = result.tempFilePaths[0]
+            let res = await wepy.uploadFile({
+                url: service.host + '/uploadFile',
+                filePath: tempFilePaths,
+                name:'wxUpload'
+            })
+            if(res.statusCode==200){
+                var url = JSON.parse( res.data ).url
+                this.files.push(url)
+            }else{
+                wx.showToast({
+                    title: '请重传图片',
+                    icon: 'loading',
+                    duration: 2000
+                });
+            }
+          }
+          this.$apply()
+        },
+        
+      previewImage (e) {
+        wepy.previewImage({
+            current: e.currentTarget.id, // 当前显示图片的http链接
+            urls: this.props.files // 需要预览的图片http链接列表
+            })
+        },
+    
+      async submit(){
+          if(this.remark!=''&&this.files.length>0){
+              wx.showToast({
+                title: '稍等，请勿重复按',
+                icon:'loading',
+                duration: 15000
+                })
+              await this.handleNullImg()
+               var StartTimestamp = new Date(String(this.realdate) + ' ' + this.realstarttime)
+                var EndTimestamp = new Date(String(this.realdate) + ' ' + this.realendtime)
+                var finalbegin = this.formatDateTime(StartTimestamp.getTime())
+                var finalend = this.formatDateTime(EndTimestamp.getTime())
+                let res = await wepy.request({
+                  url: service.host+'/application', //开发者服务器接口地址",
+                  data: {
+                      'UserID': parseInt(this.$parent.globalData.id),
+                    'ServiceID': this.id,
+                    'material': this.files,
+                    'startTime': finalbegin,
+                    'endTime': finalend,
+                    'remark': this.remark
+                  }, 
+                  method: 'POST',
+                });
+                if(res.data.num==1){ 
+                    wx.showToast({
+                    title: '申请成功',
+                    icon: 'success',
+                    duration: 800
+                    });
+                    setTimeout(() => {
+                        this.$switch({url:'/pages/user'});
+                    }, 800);
+                }else{
+                    wx.showToast({
+                        title: '申请失败',
+                        icon: 'loading',
+                        duration: 800
+                    });
+          }
+                
+          }else{
+              wx.showToast({
+                    title: '请完善信息',
+                    icon: 'loading',
+                    duration: 2000
+                });
+          }
+      }
+    }
+    async handleNullImg() {
+        if (this.files.length < 4) {
+          var len = this.files.length
+          for (var i = 0; i < 4 - len; i++) {
+            this.files.push('')
+          }
+        }
+        this.$apply()
+    }
+    async onLoad(query) {
+      console.log(query)
+      this.id = query && +query.Serviceid
+      this.realdate = query.date
+      this.realstarttime = query.starttime
+      this.realendtime = query.endtime
+      this.$apply()
+    }
+
+    onShow(){
+    }
+
+}
+</script>
+
+<style lang="less">
+@import "../../../styles/weui/widget/weui-cell/weui-uploader.wxss";
+
+@import "../../../styles/custom/fn.less";
+.page-apply {
+ 
+}
+</style>
