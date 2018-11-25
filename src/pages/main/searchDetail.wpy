@@ -40,7 +40,6 @@ export default class pageIndex extends wepy.page {
           this.title = "志愿者可提供服务"
           this.pagetype = 'volunteerDetail'
       }else if(Number(query.type)==0){
-          console.log("yes")
           this.title = "老人被服务需求"
           this.pagetype = 'demandDetail'
       }
@@ -88,12 +87,7 @@ export default class pageIndex extends wepy.page {
     })
     const data = res.data
     console.log(data)
-    // 请求到空列表后就认为没有更多了
-    if (data.length !== 0) {
-      this.noMoreList = true
-    }
-    var finallist = await this.handelList(data)
-    this.list = this.getItems(finallist,finallist.length)
+    this.list = this.getItems(data,data.length)
     this.$apply()
 
   }
@@ -113,19 +107,27 @@ export default class pageIndex extends wepy.page {
   } 
   // 处理需求列表
   getItems(data,len) {
+
     return this.getArray(data).map((item, index) => {
-      // 拼接示例数据
+      var startTime = this.formatDateTime(item.startTime)
+      var timeout = 0
+      if(this.checkDate(startTime)<0){
+          timeout = 1
+      }
       return {
         id: item.ServiceID,
         title: item.serviceContent,
         name: item.name,
         authorID: item.UserID,
-        date: item.createdAt.substring(0,10),
-        time: item.createdAt.substring(11,19),
+        date: startTime.substring(0,10),
+        mytime: startTime.substring(11,19),
+        startTime:this.checkDate(startTime),
+        timeout:timeout,
         content: this.convertHtmlToText(item.remark),
         duration: item.duration,
         phone:item.phone
       }
+      
     })
     this.$apply()
   }
