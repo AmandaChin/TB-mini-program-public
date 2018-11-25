@@ -138,6 +138,26 @@ export default class userMixin extends wepy.mixin {
         return fmt
       }
 
+      //判断日期时间差
+      checkDate(startTime) {
+        var end_date = new Date()
+        //日期格式化
+        var start_date = new Date(startTime.replace(/-/g, "/"));
+        //转成毫秒数，两个日期相减
+        var days = start_date.getTime() - end_date.getTime();
+        //do something
+        return days
+    }
+      //时间拼接
+      doSubmittime(startTime,time,duration){
+        var finaltime = {}
+        var StartTimestamp = Date.parse(new Date(String(this.date).replace(/-/g, "/") + ' ' + time))
+        var EndTimestamp = StartTimestamp + Number(duration) * 60 * 60 * 1000
+        finaltime.finalbegin = this.formatDateTime(StartTimestamp)
+        finaltime.finalend = this.formatDateTime(EndTimestamp)
+        return  finaltime
+      }
+
       //找地址
       findPosIndex(position){
         var posIndex = [0,0,0]

@@ -82,7 +82,7 @@ export default class extends wepy.app {
       }]
     },
     networkTimeout: {
-      request: 120000,
+      request: 200000,
       downloadFile: 10000
     },
     debug: true

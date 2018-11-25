@@ -176,8 +176,8 @@
         }else{
           console.log("courseid:"+this.courseid)
           wx.showToast({
-            title: '稍等片刻~',
-            icon: 'success',
+            title: '下载中，请稍等~',
+            icon: 'loading',
             duration: 2000
           });
           let res = await wepy.request({

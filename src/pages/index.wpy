@@ -62,10 +62,8 @@ export default class pageIndex extends wepy.page {
   }
 
   onReady() {
-    this.initPageData()
   }
   onShow() {
-    console.log("触发onshow")
     this.initPageData()
   }
 
@@ -100,12 +98,9 @@ export default class pageIndex extends wepy.page {
          method: 'GET'
     })
     const data = res.data
-    // 请求到空列表后就认为没有更多了
-    if (data.length !== 0) {
-      this.noMoreList1 = true
-    }
-    var finallist = await this.handelList(data)
-    this.list0 = this.getItems(finallist,finallist.length)
+    // var finallist = await this.handelList(data)
+    // this.list0 = this.getItems(finallist,finallist.length)
+    this.list0 = this.getItems(data,data.length)
     this.$apply()
 
   }
@@ -118,12 +113,9 @@ export default class pageIndex extends wepy.page {
          method: 'GET'
     })
     const data = res.data
-    // 请求到空列表后就认为没有更多了
-    if (data.length !== 0) {
-      this.noMoreList2 = true
-    }
-    var finallist = await this.handelList(data)
-    this.list1 = this.getItems(finallist,finallist.length)
+    // var finallist = await this.handelList(data)
+    // this.list1 = this.getItems(finallist,finallist.length)
+    this.list1 = this.getItems(data,data.length)
     this.$apply()
 
   }
@@ -143,9 +135,13 @@ export default class pageIndex extends wepy.page {
   } 
   // 处理图书列表
   getItems(data,len) {
+
     return this.getArray(data).map((item, index) => {
       var startTime = this.formatDateTime(item.startTime)
-      // 拼接示例数据
+      var timeout = 0
+      if(this.checkDate(startTime)<0){
+          timeout = 1
+      }
       return {
         id: item.ServiceID,
         title: item.serviceContent,
@@ -153,10 +149,14 @@ export default class pageIndex extends wepy.page {
         authorID: item.UserID,
         date: startTime.substring(0,10),
         mytime: startTime.substring(11,19),
+        startTime:this.checkDate(startTime),
+        timeout:timeout,
         content: this.convertHtmlToText(item.remark),
         duration: item.duration,
         phone:item.phone
       }
+      // 拼接示例数据
+      
     })
     this.$apply()
   }
