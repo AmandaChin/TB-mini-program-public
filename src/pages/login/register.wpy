@@ -229,23 +229,24 @@ export default class pageUser extends wepy.page {
           icon:'loading',
           duration: 20000
         })
-         let res = await wepy.request({
-           url: service.host + '/register', 
-           data: {
-             'username' : this.username,
-             'password' : this.password,
-             'gender' : this.genders[this.genderIndex],
-             'avatar' : this.$parent.globalData.user.avatarUrl,
-             'name' : this.name,
-             'IDNumber' : this.identitynum,
-             'email' : this.email,
-             'phone' : this.phone,
-             'province': this.regionindex[0],
-             'city': this.regionindex[1],
-             'district':this.regionindex[2]
-           },
-           method: 'POST'
-         });
+        let res = await wepy.request({
+          url: service.host + '/register', 
+          data: {
+            'username' : this.username,
+            'password' : this.password,
+            'gender' : this.genders[this.genderIndex],
+            'avatar' : this.$parent.globalData.user.avatarUrl,
+            'name' : this.name,
+            'IDNumber' : this.identitynum,
+            'email' : this.email,
+            'phone' : this.phone,
+            'province': this.regionindex[0],
+            'city': this.regionindex[1],
+            'district':this.regionindex[2]
+          },
+          method: 'POST'
+        });
+        setTimeout(() =>{
          if(res.data.num===1){
            wx.showToast({
               title: '注册成功',
@@ -265,6 +266,7 @@ export default class pageUser extends wepy.page {
           duration: 2000
         })
          }
+        }, 20000);
       }
       else{
         wepy.showToast({

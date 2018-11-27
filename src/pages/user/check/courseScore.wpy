@@ -56,12 +56,14 @@
     }
     methods = {
       async saveInfo(){
-        wx.showToast({
-          title: '稍等，请勿重复按',
-          icon:'loading',
-          duration: 50000
+        let modal = await wepy.showModal({
+          title: '审核提醒',
+          content: '审核结果将会在2-5分钟后显示，请勿在该事件段内重复提交审核，您确认要审核这次服务信息吗？',
+          confirmColor: '#049BFF'
         })
-        let res = await wepy.request({
+        console.log(modal)
+        if(modal.confirm){
+          let res = wepy.request({
             url: service.host + '/score',
             data:{
               'UserID': parseInt(this.$parent.globalData.id),
@@ -72,29 +74,20 @@
               'score4': parseInt(this.value4),
             },
             method: 'POST'
-        })
-        console.log(res)
-        if(res.data.code==1){
+          })
+          setTimeout(() =>{
             wx.showToast({
-            title:'提交成功!',
-            icon:'success',
-            duration:800
-          });
-          setTimeout(() => {
-            wepy.navigateTo({ url: '/pages/user/check/mycheck' });
-          }, 800);
-        }else{
-          wx.showToast({
-          title: '请重新提交',
-          icon: 'loading',
-          duration: 2000
-        });
-        }
-        setTimeout(() => {
-            wepy.navigateTo({ url: '/pages/user/check/mycheck' });
-        }, 150000);
-        this.$apply()
+              title:'您已提交!',
+              icon:'success',
+              duration:800
+            });
+            setTimeout(() => {
+              wepy.navigateTo({ url: '/pages/user/check/mycheck' });
+            }, 800);
+          },800)
       }
+    }
+        
     }
 
     async onLoad(query) {

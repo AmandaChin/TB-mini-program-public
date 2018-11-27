@@ -35,10 +35,10 @@
               <view class="weui-cell__bd">志愿者性别:</view>
               <view class="weui-cell__ft">{{volunteer.gender}}</view>
           </view>
-          <view wx:if="{{serviceList.status1!=0}}" class="weui-cell">
+          <!-- <view wx:if="{{serviceList.status1!=0}}" class="weui-cell">
               <view class="weui-cell__bd">志愿者身份证号:</view>
               <view class="weui-cell__ft">{{volunteer.IDNumber}}</view>
-          </view>
+          </view> -->
           <view wx:if="{{serviceList.status1!=0}}" class="weui-cell">
               <view class="weui-cell__bd">志愿者邮箱地址:</view>
               <view class="weui-cell__ft">{{volunteer.email}}</view>
@@ -64,7 +64,7 @@
               <view class="weui-cell__ft">{{serviceList.serviceContent}}</view>
           </view>
           <view class="weui-cell">
-              <view class="weui-cell__bd">服务日期</view>
+              <view class="weui-cell__bd">服务日期:</view>
               <view class="weui-cell__ft">{{mydate}}</view>
           </view>
           <view class="weui-cell">
@@ -75,10 +75,18 @@
               <view class="weui-cell__bd">服务时长:</view>
               <view class="weui-cell__ft">{{serviceList.duration}}小时</view>
           </view>
+          <!-- <view wx:if="{{serviceList.status2 == 1}}" class="weui-cell">
+              <view class="weui-cell__bd">真实服务日期:</view>
+              <view class="weui-cell__ft">{{mydate}}</view>
+          </view>
+          <view wx:if="{{serviceList.status2 == 1}}" class="weui-cell">
+              <view class="weui-cell__bd">真实服务时段:</view>
+              <view class="weui-cell__ft">{{DemandStartTime}} -- {{DemandEndTime}}</view>
+          </view> -->
           <view class="weui-cell">
           <view class="weui-cell__bd">
-              <view wx:if="{{serviceList.type==0}}" class="weui-label reset-label-left">老人需求详情</view>
-              <view wx:else class="weui-label reset-label-left">志愿者提供服务详情</view>
+              <view wx:if="{{serviceList.type==0}}" class="weui-label reset-label-left">老人需求详情:</view>
+              <view wx:else class="weui-label reset-label-left">志愿者提供服务详情:</view>
               <view class="weui-cell__ft">
                   <view style=" word-break: break-all">{{remark}}</view>
               </view>
@@ -111,7 +119,7 @@
           </block>
           <view class="btn-text-bottom">删除</view>
         </button>
-        <button @tap="toEdit" disabled="{{serviceList.status1!=0||this.isOnDate=='true'}}" class="btn-block  btn-flex-full">
+        <button @tap="toEdit" disabled="{{serviceList.status1!=0}}" class="btn-block  btn-flex-full">
           <block wx:if="{{serviceList.status1==0}}">
             <image class="imgicon" src="{{icon_edit_active}}" mode="aspectFit"/>
           </block>
@@ -120,7 +128,7 @@
           </block>
           <view class="btn-text-bottom">编辑</view>
         </button>
-        <button @tap="handle" disabled="{{serviceList.status2==2||serviceList.status1==0}}" class="weui-btn btn-block btn-flex-full" type="primary">
+        <button @tap="handle" disabled="{{serviceList.status2==2||serviceList.status1==0||!isOnDate}}" class="weui-btn btn-block btn-flex-full" type="primary">
           <text  wx:if="{{serviceList.status1==0}}">暂无申请者</text>
           <text  wx:elif="{{serviceList.status2==0}}">申请勋章</text>
           <text  wx:elif="{{serviceList.status2==1}}">查看已审核人数</text>
@@ -161,10 +169,11 @@
       navigate: false,
       demand: {},
       remark:'',
-      isOnDate: 'false'
+      isOnDate: false
     }
 
     computed = {
+      
     }
 
     async onLoad(query) {
@@ -192,8 +201,8 @@
           this.DemandStartTime = this.IsformatDate(this.serviceList.startTime).substring(11,19)
           this.DemandEndTime = this.IsformatDate(this.serviceList.endTime).substring(11,19)
           this.remark = this.convertHtmlToText(this.serviceList.remark)
-          if(new Date(this.serviceList.endTime).getTime()<new Date().getTime()){
-            this.isOnDate = 'true'
+          if(this.checkDate(this.serviceList.endTime)<0){
+            this.isOnDate = true
           }
           if(list[i].status1==1){
             let beneficiary = await wepy.request({

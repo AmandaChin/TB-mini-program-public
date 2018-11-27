@@ -296,9 +296,9 @@ export default class pageIndex extends wepy.page {
         image: this.image[i],
         //0为checked,1为checking
         status: i,
-        waitday : Math.floor((new Date().getTime() - Date.parse(applyTime))/(24*3600*1000)),
-        waithour : Math.floor((( new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))/(3600*1000)),
-        waitminues : Math.floor((((new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))%(3600*1000))/(60*1000))
+        waitday : Math.floor((new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))/(24*3600*1000)),
+        waithour : Math.floor((( new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))%(24*3600*1000))/(3600*1000)),
+        waitminues : Math.floor((((new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))%(24*3600*1000))%(3600*1000))/(60*1000))
       }
     })
   }
@@ -315,9 +315,9 @@ export default class pageIndex extends wepy.page {
         image: this.image[i],
         //0为checked,1为checking
         status: i,
-        waitday : Math.floor((new Date().getTime() - Date.parse(applyTime))/(24*3600*1000)),
-        waithour : Math.floor((( new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))/(3600*1000)),
-        waitminues : Math.floor((((new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))%(3600*1000))/(60*1000))
+        waitday : Math.floor((new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))/(24*3600*1000)),
+        waithour : Math.floor((( new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))%(24*3600*1000))/(3600*1000)),
+        waitminues : Math.floor((((new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))%(24*3600*1000))%(3600*1000))/(60*1000))
       }
     })
   }
@@ -334,9 +334,9 @@ export default class pageIndex extends wepy.page {
         image: this.image[i],
         //0为checked,1为checking
         status: i,
-        waitday : Math.floor((new Date().getTime() - Date.parse(applyTime))/(24*3600*1000)),
-        waithour : Math.floor((( new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))/(3600*1000)),
-        waitminues : Math.floor((((new Date().getTime() - Date.parse(applyTime))%(24*3600*1000))%(3600*1000))/(60*1000))
+        waitday : Math.floor((new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))/(24*3600*1000)),
+        waithour : Math.floor((( new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))%(24*3600*1000))/(3600*1000)),
+        waitminues : Math.floor((((new Date().getTime() - Date.parse(String(applyTime).replace(/-/g, "/")))%(24*3600*1000))%(3600*1000))/(60*1000))
       }
     })
   }
